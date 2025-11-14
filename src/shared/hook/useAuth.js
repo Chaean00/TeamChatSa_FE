@@ -42,9 +42,18 @@ export function useAuth() {
   }, [])
 
   const isAuthenticated = Boolean(getAuthToken())
-  const logout = useCallback(() => {
-    clearAuth()
-    clearUserCache()
+  const logout = useCallback(async () => {
+    try {
+      // refreshToken 삭제를 위한 로그아웃 API 호출
+      await api.post('/v1/auth/logout')
+    } catch (e) {
+      // 로그아웃 API 실패해도 클라이언트에서는 로그아웃 처리
+      console.error('로그아웃 API 호출 실패:', e)
+    } finally {
+      // accessToken 삭제 및 사용자 캐시 클리어
+      clearAuth()
+      clearUserCache()
+    }
   }, [clearAuth])
 
   const signupWithEmail = useCallback(async ({ userName, email, password, position, phone }) => {

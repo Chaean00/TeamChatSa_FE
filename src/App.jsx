@@ -3,6 +3,7 @@ import Layout from './app/Layout'
 import HomePage from './pages/Home'
 import MatchesPage from './pages/Matches'
 import TeamsPage from './pages/Teams'
+import TeamDetailPage from './pages/TeamDetail'
 import LoginPage from './pages/Login'
 import PrivateRoute from './app/PrivateRoute'
 import SignupPage from './pages/Signup'
@@ -18,6 +19,7 @@ function App() {
         <Route path="/" element={<HomePage />} />
         <Route path="/matches" element={<PrivateRoute><MatchesPage /></PrivateRoute>} />
         <Route path="/teams" element={<PrivateRoute><TeamsPage /></PrivateRoute>} />
+        <Route path="/teams/:teamId" element={<PrivateRoute><TeamDetailPage /></PrivateRoute>} />
         <Route path="/teams/create" element={<PrivateRoute><TeamCreatePage /></PrivateRoute>} />
         <Route path="/mypage" element={<PrivateRoute><MyPage /></PrivateRoute>} />
         <Route path="/login" element={<LoginPage />} />

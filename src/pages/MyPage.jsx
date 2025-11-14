@@ -39,6 +39,7 @@ function MyPage() {
   const [error, setError] = useState(null)
   const [nicknameError, setNicknameError] = useState(null)
   const [isCheckingNickname, setIsCheckingNickname] = useState(false)
+  const [isNicknameChecked, setIsNicknameChecked] = useState(false)
   const [formData, setFormData] = useState({
     nickname: '',
     phone: '',
@@ -75,27 +76,34 @@ function MyPage() {
     }
     setIsEditing(true)
     setError(null)
+    setNicknameError(null)
+    setIsNicknameChecked(false)
   }
 
   const handleCancel = () => {
     setIsEditing(false)
     setError(null)
+    setNicknameError(null)
+    setIsNicknameChecked(false)
   }
 
   const checkNickname = async (nickname) => {
     if (!nickname || nickname.trim() === '') {
       setNicknameError(null)
+      setIsNicknameChecked(false)
       return true
     }
 
     // 현재 닉네임과 같으면 검사하지 않음
     if (nickname === user?.nickname) {
       setNicknameError(null)
+      setIsNicknameChecked(false)
       return true
     }
 
     setIsCheckingNickname(true)
     setNicknameError(null)
+    setIsNicknameChecked(false)
 
     try {
       const res = await api.get(`/v1/users/check`, {
@@ -105,14 +113,18 @@ function MyPage() {
       
       if (!isAvailable) {
         setNicknameError('이미 사용 중인 닉네임입니다.')
+        setIsNicknameChecked(true)
         return false
       } else {
         setNicknameError(null)
+        setIsNicknameChecked(true)
         return true
       }
     } catch (e) {
-      setNicknameError(null)
-      return true
+      const errorMessage = e.response?.data?.message || e.message || '닉네임 중복 검사 중 오류가 발생했습니다.'
+      setNicknameError(errorMessage)
+      setIsNicknameChecked(true)
+      return false
     } finally {
       setIsCheckingNickname(false)
     }
@@ -127,6 +139,7 @@ function MyPage() {
     // 빈 값이거나 현재 닉네임과 같으면 검사하지 않음
     if (!nickname || nickname.trim() === '' || nickname === user?.nickname) {
       setNicknameError(null)
+      setIsNicknameChecked(false)
       return
     }
 
@@ -141,9 +154,10 @@ function MyPage() {
     const { name, value } = e.target
     setFormData(prev => ({ ...prev, [name]: value }))
     
-    // 닉네임 변경 시 에러 초기화 (실제 검사는 useEffect에서)
+    // 닉네임 변경 시 에러 및 검사 완료 상태 초기화 (실제 검사는 useEffect에서)
     if (name === 'nickname') {
       setNicknameError(null)
+      setIsNicknameChecked(false)
     }
   }
 
@@ -151,6 +165,18 @@ function MyPage() {
     e.preventDefault()
     setIsSaving(true)
     setError(null)
+
+    // 변경사항이 있는지 확인
+    const hasChanges = 
+      formData.nickname.trim() !== (user?.nickname || '') ||
+      formData.position.trim() !== (user?.position || '') ||
+      formData.phone.trim() !== (user?.phone || '')
+
+    if (!hasChanges) {
+      setIsEditing(false)
+      setIsSaving(false)
+      return
+    }
 
     // 닉네임이 변경되었고, 현재 중복 검사 결과가 없으면 다시 검사
     if (formData.nickname && formData.nickname !== user?.nickname) {
@@ -172,6 +198,8 @@ function MyPage() {
 
       await api.patch('/v1/users', payload)
       setIsEditing(false)
+      setNicknameError(null)
+      setIsNicknameChecked(false)
       // 사용자 정보 다시 조회
       await refetch()
     } catch (e) {
@@ -343,7 +371,7 @@ function MyPage() {
                 {nicknameError && (
                   <p className="text-red-600 text-xs mt-1">{nicknameError}</p>
                 )}
-                {formData.nickname && !nicknameError && !isCheckingNickname && formData.nickname !== user?.nickname && (
+                {formData.nickname && !nicknameError && !isCheckingNickname && isNicknameChecked && formData.nickname !== user?.nickname && (
                   <p className="text-green-600 text-xs mt-1">사용 가능한 닉네임입니다.</p>
                 )}
               </label>
