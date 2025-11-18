@@ -1,11 +1,13 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { api } from '../shared/api/client'
+import { useUser } from '../shared/hook/useUser'
 import Button from '../shared/ui/Button.jsx'
 
 function TeamDetailPage() {
   const { teamId } = useParams()
   const navigate = useNavigate()
+  const { user } = useUser()
   const [team, setTeam] = useState(null)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState(null)
@@ -82,6 +84,8 @@ function TeamDetailPage() {
     )
   }
 
+  const hasTeam = Boolean(user?.teamId)
+
   return (
     <section className="py-10 sm:py-14">
       <div className="max-w-2xl mx-auto">
@@ -125,25 +129,32 @@ function TeamDetailPage() {
               )}
             </div>
 
-            <div className="pt-4 border-t border-gray-100">
-              <label className="grid gap-1 mb-4">
-                <span className="text-sm text-mute">가입 신청 메시지</span>
-                <textarea
-                  value={applyMessage}
-                  onChange={(e) => setApplyMessage(e.target.value)}
-                  rows={3}
-                  className="border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary-200 resize-none"
-                  placeholder="가입 신청 메시지를 입력하세요"
-                />
-              </label>
-              <Button
-                onClick={handleApply}
-                disabled={isApplying}
-                className="w-full"
-              >
-                {isApplying ? '신청 중...' : '가입 신청하기'}
-              </Button>
-            </div>
+            {!hasTeam && (
+              <div className="pt-4 border-t border-gray-100">
+                <label className="grid gap-1 mb-4">
+                  <span className="text-sm text-mute">가입 신청 메시지</span>
+                  <textarea
+                    value={applyMessage}
+                    onChange={(e) => setApplyMessage(e.target.value)}
+                    rows={3}
+                    className="border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary-200 resize-none"
+                    placeholder="가입 신청 메시지를 입력하세요"
+                  />
+                </label>
+                <Button
+                  onClick={handleApply}
+                  disabled={isApplying}
+                  className="w-full"
+                >
+                  {isApplying ? '신청 중...' : '가입 신청하기'}
+                </Button>
+              </div>
+            )}
+            {hasTeam && (
+              <div className="pt-4 border-t border-gray-100">
+                <p className="text-sm text-mute">이미 다른 팀에 소속되어 있어 가입 신청을 할 수 없습니다.</p>
+              </div>
+            )}
           </div>
         </div>
       </div>

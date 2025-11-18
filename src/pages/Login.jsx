@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../shared/hook/useAuth'
 import Button from '../shared/ui/Button.jsx'
@@ -8,6 +8,23 @@ function LoginPage() {
   const { isLoading, error, loginWithEmail, loginWithKakao } = useAuth()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [logoutNotice, setLogoutNotice] = useState(null)
+
+  useEffect(() => {
+    try {
+      if (typeof window === 'undefined') return
+      const reason = window.sessionStorage.getItem('logoutReason')
+      if (!reason) return
+
+      if (reason === 'expired') {
+        setLogoutNotice('로그인 세션이 만료되었습니다. 다시 로그인해 주세요.')
+      }
+
+      window.sessionStorage.removeItem('logoutReason')
+    } catch (storageError) {
+      console.warn('로그인 알림 상태 확인 실패:', storageError)
+    }
+  }, [])
 
   const onSubmit = async (e) => {
     e.preventDefault()
@@ -27,6 +44,12 @@ function LoginPage() {
         <div className="rounded-2xl border border-gray-100 bg-white/80 shadow-card p-6">
           <h2 className="text-2xl font-semibold text-ink">로그인</h2>
           <p className="text-mute text-sm mt-1">계정으로 계속 진행하세요.</p>
+
+          {logoutNotice && (
+            <div className="mt-4 text-sm px-3 py-2 rounded-lg border bg-red-50 text-red-700 border-red-200">
+              {logoutNotice}
+            </div>
+          )}
 
           <form onSubmit={onSubmit} className="grid gap-3 mt-6">
             <label className="grid gap-1">

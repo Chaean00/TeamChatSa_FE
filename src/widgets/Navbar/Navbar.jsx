@@ -10,8 +10,9 @@ function Navbar() {
   const { user } = useUser()
   const isAuthenticated = Boolean(token)
 
-  const handleLogout = () => {
-    logout()
+  const handleLogout = async () => {
+    await logout()
+    alert('로그아웃되었습니다.')
     navigate('/', { replace: true })
   }
 

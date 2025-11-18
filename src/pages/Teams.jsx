@@ -13,49 +13,48 @@ function TeamsPage() {
   const [isLastPage, setIsLastPage] = useState(false)
   const observerTarget = useRef(null)
 
-  useEffect(() => {
-    fetchTeams(0, true)
-  }, [])
-
-  const fetchTeams = async (pageNum = 0, isInitial = false) => {
-    try {
-      if (isInitial) {
-        setIsLoading(true)
-      } else {
-        setIsLoadingMore(true)
-      }
-      setError(null)
-      const res = await api.get('/v1/teams', {
-        params: {
-          page: pageNum,
-          size: 20
+  const fetchTeams = useCallback(
+    async (pageNum = 0) => {
+      const isInitial = pageNum === 0
+      try {
+        if (isInitial) {
+          setIsLoading(true)
+        } else {
+          setIsLoadingMore(true)
         }
-      })
-      const responseData = res.data?.data
-      const teamsData = responseData?.content || []
-      const last = responseData?.last ?? false
+        setError(null)
+        const res = await api.get('/v1/teams', {
+          params: {
+            page: pageNum,
+            size: 20,
+          },
+        })
+        const responseData = res.data?.data
+        const teamsData = responseData?.content || []
+        const last = responseData?.last ?? false
 
-      if (isInitial) {
-        setTeams(teamsData)
-      } else {
-        setTeams(prev => [...prev, ...teamsData])
+        setTeams((prev) => (isInitial ? teamsData : [...prev, ...teamsData]))
+        setIsLastPage(last)
+      } catch (e) {
+        const errorMessage = e.response?.data?.message || e.message || '팀 목록을 불러오는데 실패했습니다.'
+        setError(errorMessage)
+      } finally {
+        setIsLoading(false)
+        setIsLoadingMore(false)
       }
-      setIsLastPage(last)
-      setPage(pageNum)
-    } catch (e) {
-      const errorMessage = e.response?.data?.message || e.message || '팀 목록을 불러오는데 실패했습니다.'
-      setError(errorMessage)
-    } finally {
-      setIsLoading(false)
-      setIsLoadingMore(false)
-    }
-  }
+    },
+    []
+  )
+
+  useEffect(() => {
+    fetchTeams(page)
+  }, [page, fetchTeams])
 
   const loadMore = useCallback(() => {
     if (!isLoadingMore && !isLastPage) {
-      fetchTeams(page + 1, false)
+      setPage((prev) => prev + 1)
     }
-  }, [page, isLoadingMore, isLastPage])
+  }, [isLoadingMore, isLastPage])
 
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -111,15 +110,21 @@ function TeamsPage() {
                 onClick={() => navigate(`/teams/${team.id}`)}
                 className="rounded-xl border border-gray-100 p-4 bg-white/70 shadow-card cursor-pointer hover:shadow-lg transition-shadow"
               >
-                {team.img && (
-                  <div className="w-full h-40 mb-3 rounded-lg overflow-hidden bg-gray-100">
+                <div className="w-full h-40 mb-3 rounded-lg overflow-hidden bg-gray-100 flex items-center justify-center">
+                  {team.img ? (
                     <img
                       src={team.img}
                       alt={team.name}
                       className="w-full h-full object-cover"
                     />
-                  </div>
-                )}
+                  ) : (
+                    <div className="w-full h-full bg-primary-100 flex items-center justify-center">
+                      <span className="text-primary-600 font-semibold text-2xl">
+                        {team.name ? team.name.charAt(0).toUpperCase() : 'T'}
+                      </span>
+                    </div>
+                  )}
+                </div>
                 <div className="text-ink font-medium text-lg mb-1">{team.name}</div>
                 <div className="text-mute text-sm mb-2">{team.area}</div>
                 {team.description && (

@@ -1,10 +1,12 @@
 import { useState, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { api } from '../shared/api/client'
+import { useUser } from '../shared/hook/useUser'
 import Button from '../shared/ui/Button.jsx'
 
 function TeamCreatePage() {
   const navigate = useNavigate()
+  const { refetch } = useUser()
   const fileInputRef = useRef(null)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState(null)
@@ -55,10 +57,10 @@ function TeamCreatePage() {
     try {
       let imageUrl = null
 
-      // 이미지가 있으면 S3에 업로드
+      // 이미지가 있으면 Azure Blob Storage에 업로드
       if (formData.image) {
         // 1. 서명된 URL 받기
-        const presignRes = await api.post('/v1/aws/s3/presign-upload', {
+        const presignRes = await api.post('/v1/azure/storage/presign-upload', {
           fileName: formData.image.name,
           contentType: formData.image.type,
         })
@@ -74,6 +76,7 @@ function TeamCreatePage() {
           body: formData.image,
           headers: {
             'Content-Type': formData.image.type,
+            'x-ms-blob-type': 'BlockBlob',
           },
         })
 
@@ -103,6 +106,8 @@ function TeamCreatePage() {
       const res = await api.post('/v1/teams', payload)
       
       if (res.data) {
+        // 팀 생성 후 사용자 정보 갱신 (teamId, teamRole 업데이트)
+        await refetch()
         alert('팀이 성공적으로 생성되었습니다.')
         navigate('/teams', { replace: true })
       }
