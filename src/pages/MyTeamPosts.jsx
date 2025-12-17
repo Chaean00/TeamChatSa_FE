@@ -59,7 +59,7 @@ function MyTeamPostsPage() {
       const data = res.data?.data
       const content = data?.content || []
       setPosts(prev => (replace ? content : [...prev, ...content]))
-      setPage(data?.number ?? pageToLoad)
+      setPage(pageToLoad)
       setIsLastPage(data?.last ?? true)
     } catch (e) {
       setError(e.response?.data?.message || e.message || '팀 게시글을 불러오지 못했습니다.')

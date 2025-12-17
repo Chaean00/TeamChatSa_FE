@@ -13,7 +13,7 @@ function MatchCreatePage() {
     content: '',
     matchDate: '',
     matchTime: '',
-    matchType: '',
+    headCount: '',
     lat: '',
     lng: '',
     address: '',
@@ -59,8 +59,8 @@ function MatchCreatePage() {
         payload.placeName = formData.placeName
       }
 
-      if (formData.matchType) {
-        payload.matchType = formData.matchType
+      if (formData.headCount) {
+        payload.headCount = parseInt(formData.headCount, 10)
       }
 
       await api.post('/v1/matches', payload)
@@ -147,21 +147,23 @@ function MatchCreatePage() {
             </div>
 
             <label className="grid gap-1">
-              <span className="text-sm text-mute">경기 형식 <span className="text-red-500">*</span></span>
+              <span className="text-sm text-mute">경기 인원 <span className="text-red-500">*</span></span>
               <select
-                name="matchType"
-                value={formData.matchType}
+                name="headCount"
+                value={formData.headCount}
                 onChange={handleChange}
                 required
                 className="border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary-200"
               >
                 <option value="">선택해주세요</option>
-                <option value="5 vs 5">5 vs 5</option>
-                <option value="6 vs 6">6 vs 6</option>
-                <option value="7 vs 7">7 vs 7</option>
-                <option value="8 vs 8">8 vs 8</option>
-                <option value="9 vs 9">9 vs 9</option>
-                <option value="11 vs 11">11 vs 11</option>
+                <option value="4">4 vs 4</option>
+                <option value="5">5 vs 5</option>
+                <option value="6">6 vs 6</option>
+                <option value="7">7 vs 7</option>
+                <option value="8">8 vs 8</option>
+                <option value="9">9 vs 9</option>
+                <option value="10">10 vs 10</option>
+                <option value="11">11 vs 11</option>
               </select>
             </label>
 

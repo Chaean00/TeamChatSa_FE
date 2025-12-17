@@ -436,6 +436,19 @@ function MyPage() {
           <p className="text-mute">내 정보를 확인하고 관리할 수 있어요.</p>
         </div>
 
+        {/* 알림 내역 카드 */}
+        <div className="rounded-2xl border border-gray-100 bg-white/80 shadow-card p-6 mb-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="text-lg font-semibold text-ink mb-1">알림 내역</h3>
+              <p className="text-mute text-sm">모든 알림을 한 곳에서 확인할 수 있어요.</p>
+            </div>
+            <Button onClick={() => navigate('/mypage/notifications')} className="text-sm">
+              알림 보기
+            </Button>
+          </div>
+        </div>
+
         <div className="rounded-2xl border border-gray-100 bg-white/80 shadow-card p-6">
           {isEditing ? (
             <form onSubmit={handleSubmit} className="grid gap-4">

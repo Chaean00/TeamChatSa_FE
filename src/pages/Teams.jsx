@@ -13,6 +13,12 @@ function TeamsPage() {
   const [isLastPage, setIsLastPage] = useState(false)
   const observerTarget = useRef(null)
 
+  // 검색 필터 상태 (입력 중인 필터)
+  const [tempTeamName, setTempTeamName] = useState('')
+  
+  // 적용된 검색 필터 상태
+  const [appliedTeamName, setAppliedTeamName] = useState('')
+
   const fetchTeams = useCallback(
     async (pageNum = 0) => {
       const isInitial = pageNum === 0
@@ -23,12 +29,18 @@ function TeamsPage() {
           setIsLoadingMore(true)
         }
         setError(null)
-        const res = await api.get('/v1/teams', {
-          params: {
-            page: pageNum,
-            size: 20,
-          },
-        })
+        
+        const params = {
+          page: pageNum,
+          size: 20,
+        }
+        
+        // 검색 필터 파라미터 추가
+        if (appliedTeamName) {
+          params.teamName = appliedTeamName
+        }
+        
+        const res = await api.get('/v1/teams', { params })
         const responseData = res.data?.data
         const teamsData = responseData?.content || []
         const last = responseData?.last ?? false
@@ -43,18 +55,48 @@ function TeamsPage() {
         setIsLoadingMore(false)
       }
     },
-    []
+    [appliedTeamName]
   )
 
+  // 적용된 검색 필터 변경 시 검색 실행 (초기 로드 포함)
   useEffect(() => {
-    fetchTeams(page)
+    setPage(0)
+    setTeams([])
+    setIsLastPage(false)
+    fetchTeams(0)
+  }, [appliedTeamName, fetchTeams])
+
+  // page 변경 시 다음 페이지 로드
+  useEffect(() => {
+    if (page > 0) {
+      fetchTeams(page)
+    }
   }, [page, fetchTeams])
 
+  const handleTeamNameChange = (value) => {
+    setTempTeamName(value)
+  }
+  
+  const applySearch = () => {
+    setAppliedTeamName(tempTeamName)
+    setPage(0)
+    setTeams([])
+    setIsLastPage(false)
+  }
+  
+  const resetSearch = () => {
+    setTempTeamName('')
+    setAppliedTeamName('')
+    setPage(0)
+    setTeams([])
+    setIsLastPage(false)
+  }
+
   const loadMore = useCallback(() => {
-    if (!isLoadingMore && !isLastPage) {
+    if (!isLoadingMore && !isLastPage && !isLoading) {
       setPage((prev) => prev + 1)
     }
-  }, [isLoadingMore, isLastPage])
+  }, [isLoadingMore, isLastPage, isLoading])
 
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -89,6 +131,41 @@ function TeamsPage() {
         </Link>
       </div>
 
+      {/* 검색 섹션 */}
+      <div className="rounded-2xl border border-gray-100 bg-white/80 shadow-card p-6 mb-6">
+        <div className="grid gap-4">
+          <div className="flex items-center justify-between">
+            <h3 className="text-lg font-semibold text-ink">팀 검색</h3>
+            {appliedTeamName && (
+              <button
+                onClick={resetSearch}
+                className="text-sm text-mute hover:text-ink transition-colors"
+              >
+                초기화
+              </button>
+            )}
+          </div>
+          
+          <div className="flex gap-2">
+            <input
+              type="text"
+              placeholder="팀 이름을 입력하세요"
+              value={tempTeamName}
+              onChange={(e) => handleTeamNameChange(e.target.value)}
+              onKeyPress={(e) => {
+                if (e.key === 'Enter') {
+                  applySearch()
+                }
+              }}
+              className="flex-1 border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary-200 text-sm"
+            />
+            <Button onClick={applySearch} className="px-6">
+              검색
+            </Button>
+          </div>
+        </div>
+      </div>
+
       {isLoading ? (
         <div className="text-center py-10">
           <p className="text-mute">로딩 중...</p>
@@ -99,7 +176,9 @@ function TeamsPage() {
         </div>
       ) : teams.length === 0 ? (
         <div className="text-center py-10">
-          <p className="text-mute">등록된 팀이 없습니다.</p>
+          <p className="text-mute">
+            {appliedTeamName ? `"${appliedTeamName}"에 대한 검색 결과가 없습니다.` : '등록된 팀이 없습니다.'}
+          </p>
         </div>
       ) : (
         <>

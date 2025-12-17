@@ -55,28 +55,29 @@ function TeamCreatePage() {
     setError(null)
 
     try {
-      let imageUrl = null
-
-      // 이미지가 있으면 Azure Blob Storage에 업로드
+      let imageUrl = null      // 이미지가 있으면 GCP Cloud Storage에 업로드
       if (formData.image) {
         // 1. 서명된 URL 받기
-        const presignRes = await api.post('/v1/azure/storage/presign-upload', {
+        const presignRes = await api.post('/v1/gcp/storage/presign-upload', {
           fileName: formData.image.name,
           contentType: formData.image.type,
         })
 
         const presignData = presignRes.data?.data
-        if (!presignData || !presignData.url) {
+        if (!presignData || !presignData.uploadUrl) {
           throw new Error('서명된 URL을 받아오는데 실패했습니다.')
         }
 
+        if (!presignData.publicUrl) {
+          throw new Error('공개 URL을 받아오는데 실패했습니다.')
+        }
+
         // 2. 서명된 URL로 이미지 업로드 (PUT 요청)
-        const uploadRes = await fetch(presignData.url, {
+        const uploadRes = await fetch(presignData.uploadUrl, {
           method: 'PUT',
           body: formData.image,
           headers: {
             'Content-Type': formData.image.type,
-            'x-ms-blob-type': 'BlockBlob',
           },
         })
 
@@ -84,9 +85,8 @@ function TeamCreatePage() {
           throw new Error('이미지 업로드에 실패했습니다.')
         }
 
-        // 3. 업로드된 이미지의 base URL 추출 (query string 제거)
-        const urlObj = new URL(presignData.url)
-        imageUrl = `${urlObj.protocol}//${urlObj.host}${urlObj.pathname}`
+        // 3. 업로드된 이미지의 공개 URL 사용
+        imageUrl = presignData.publicUrl
       }
 
       // 4. 팀 생성 API 호출 (이미지 URL만 전송)
