@@ -54,6 +54,10 @@ function MyPage() {
     confirmPassword: '',
   })
   const [isDeleting, setIsDeleting] = useState(false)
+  const [myTeam, setMyTeam] = useState(null)
+  const [teamApplications, setTeamApplications] = useState([])
+  const [isLoadingTeam, setIsLoadingTeam] = useState(false)
+  const [isLoadingApplications, setIsLoadingApplications] = useState(false)
 
   // 사용자 정보가 로드되면 폼 데이터 초기화
   useEffect(() => {
@@ -65,6 +69,103 @@ function MyPage() {
       })
     }
   }, [user, isEditing])
+
+  // 본인의 팀 정보 조회
+  useEffect(() => {
+    if (user?.teamId) {
+      fetchMyTeam()
+    } else {
+      setMyTeam(null)
+    }
+  }, [user?.teamId])
+
+  const fetchMyTeam = async () => {
+    if (!user?.teamId) return
+    
+    try {
+      setIsLoadingTeam(true)
+      // TODO: API 엔드포인트 확인 필요 - GET /api/v1/users/team 또는 GET /api/v1/teams/{teamId}
+      const res = await api.get(`/v1/teams/${user.teamId}`)
+      const teamData = res.data?.data
+      setMyTeam(teamData)
+      
+      // 가입 신청 목록 조회 (팀장/부팀장만)
+      if (teamData && (teamData.userRole === 'LEADER' || teamData.userRole === 'CO_LEADER')) {
+        fetchTeamApplications(teamData.id)
+      }
+    } catch (e) {
+      console.error('팀 정보 조회 실패:', e)
+      setMyTeam(null)
+    } finally {
+      setIsLoadingTeam(false)
+    }
+  }
+
+  const fetchTeamApplications = async (teamId) => {
+    try {
+      setIsLoadingApplications(true)
+      const res = await api.get(`/v1/teams/${teamId}/applications`)
+      const applications = res.data?.data || []
+      setTeamApplications(applications)
+    } catch (e) {
+      console.error('팀 가입 신청 목록 조회 실패:', e)
+      setTeamApplications([])
+    } finally {
+      setIsLoadingApplications(false)
+    }
+  }
+
+  const isTeamLeader = myTeam?.userRole === 'LEADER' || myTeam?.userRole === 'CO_LEADER'
+
+  const handleAcceptApplication = async (applicationId) => {
+    try {
+      await api.post(`/v1/teams/${myTeam.id}/applications/${applicationId}/accept`)
+      alert('가입 신청을 수락했습니다.')
+      fetchTeamApplications(myTeam.id)
+    } catch (e) {
+      const errorMessage = e.response?.data?.message || e.message || '가입 신청 수락에 실패했습니다.'
+      alert(errorMessage)
+    }
+  }
+
+  const handleRejectApplication = async (applicationId) => {
+    if (!window.confirm('정말 이 가입 신청을 거절하시겠습니까?')) {
+      return
+    }
+
+    try {
+      await api.post(`/v1/teams/${myTeam.id}/applications/${applicationId}/reject`)
+      alert('가입 신청을 거절했습니다.')
+      fetchTeamApplications(myTeam.id)
+    } catch (e) {
+      const errorMessage = e.response?.data?.message || e.message || '가입 신청 거절에 실패했습니다.'
+      alert(errorMessage)
+    }
+  }
+
+  const handleDeleteTeam = async () => {
+    if (!window.confirm('정말 팀을 삭제하시겠습니까?\n팀 삭제 후에는 복구할 수 없습니다.')) {
+      return
+    }
+
+    const doubleConfirmed = window.confirm('팀 삭제를 최종 확인합니다.\n정말 삭제하시겠습니까?')
+    if (!doubleConfirmed) {
+      return
+    }
+
+    try {
+      setIsDeleting(true)
+      await api.delete(`/v1/teams/${myTeam.id}`)
+      alert('팀이 삭제되었습니다.')
+      setMyTeam(null)
+      await refetch()
+    } catch (e) {
+      const errorMessage = e.response?.data?.message || e.message || '팀 삭제에 실패했습니다.'
+      alert(errorMessage)
+    } finally {
+      setIsDeleting(false)
+    }
+  }
 
   const handleEdit = () => {
     if (user) {
@@ -210,8 +311,9 @@ function MyPage() {
     }
   }
 
-  const handleLogout = () => {
-    logout()
+  const handleLogout = async () => {
+    await logout()
+    alert('로그아웃되었습니다.')
     navigate('/', { replace: true })
   }
 
@@ -332,6 +434,19 @@ function MyPage() {
         <div className="grid gap-2 mb-6">
           <h2 className="text-3xl font-semibold text-ink">마이페이지</h2>
           <p className="text-mute">내 정보를 확인하고 관리할 수 있어요.</p>
+        </div>
+
+        {/* 알림 내역 카드 */}
+        <div className="rounded-2xl border border-gray-100 bg-white/80 shadow-card p-6 mb-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="text-lg font-semibold text-ink mb-1">알림 내역</h3>
+              <p className="text-mute text-sm">모든 알림을 한 곳에서 확인할 수 있어요.</p>
+            </div>
+            <Button onClick={() => navigate('/mypage/notifications')} className="text-sm">
+              알림 보기
+            </Button>
+          </div>
         </div>
 
         <div className="rounded-2xl border border-gray-100 bg-white/80 shadow-card p-6">
@@ -467,6 +582,107 @@ function MyPage() {
             </div>
           )}
         </div>
+
+        {/* 내 팀 관리 섹션 */}
+        {myTeam && (
+          <div className="rounded-2xl border border-gray-100 bg-white/80 shadow-card p-6 mt-6">
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <h3 className="text-lg font-semibold text-ink">내 팀</h3>
+                <p className="text-mute text-sm mt-1">{myTeam.name}</p>
+              </div>
+              <Button variant="ghost" onClick={() => navigate(`/teams/${myTeam.id}`)} className="text-sm">
+                상세보기
+              </Button>
+            </div>
+
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="p-4 border border-gray-100 rounded-xl bg-white flex flex-col h-full">
+                <div className="flex-1">
+                  <h4 className="text-sm font-medium text-ink mb-1">팀 멤버</h4>
+                  <p className="text-mute text-sm mb-3">팀 멤버 목록을 확인하고 역할을 관리할 수 있어요.</p>
+                </div>
+                <Button onClick={() => navigate('/mypage/team-members')} className="w-full text-sm mt-auto">
+                  멤버 관리 페이지로 이동
+                </Button>
+              </div>
+              <div className="p-4 border border-gray-100 rounded-xl bg-white flex flex-col h-full">
+                <div className="flex-1">
+                  <h4 className="text-sm font-medium text-ink mb-1">팀 게시글</h4>
+                  <p className="text-mute text-sm mb-3">팀이 올린 매치 게시글을 한 곳에서 볼 수 있어요.</p>
+                </div>
+                <Button onClick={() => navigate('/mypage/team-posts')} className="w-full text-sm mt-auto">
+                  게시글 페이지로 이동
+                </Button>
+              </div>
+            </div>
+
+            {isTeamLeader ? (
+              <>
+                {/* 팀 가입 신청 관리 */}
+                <div className="mt-6">
+                  <h4 className="text-sm font-medium text-ink mb-2">가입 신청</h4>
+                  {isLoadingApplications ? (
+                    <p className="text-mute text-sm">로딩 중...</p>
+                  ) : teamApplications.filter(app => app.status === 'PENDING').length === 0 ? (
+                    <p className="text-mute text-sm">가입 신청이 없습니다.</p>
+                  ) : (
+                    <div className="space-y-2">
+                      {teamApplications
+                        .filter(app => app.status === 'PENDING')
+                        .map((application) => (
+                          <div key={application.applicationId} className="p-3 border border-gray-100 rounded-lg">
+                            <div className="flex items-start gap-3 mb-2">
+                              <div className="flex-1">
+                                <div className="text-sm font-medium text-ink">{application.userNickname || application.userName}</div>
+                                {application.message && (
+                                  <div className="text-xs text-mute mt-1">{application.message}</div>
+                                )}
+                                <div className="text-xs text-mute mt-1">
+                                  신청일: {new Date(application.appliedAt).toLocaleDateString()}
+                                </div>
+                              </div>
+                            </div>
+                            <div className="flex gap-2 mt-2">
+                              <Button
+                                onClick={() => handleAcceptApplication(application.applicationId)}
+                                className="flex-1 text-sm"
+                              >
+                                수락
+                              </Button>
+                              <Button
+                                onClick={() => handleRejectApplication(application.applicationId)}
+                                variant="ghost"
+                                className="flex-1 text-sm text-red-600 hover:text-red-700 hover:bg-red-50"
+                              >
+                                거절
+                              </Button>
+                            </div>
+                          </div>
+                        ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* 팀 삭제 */}
+                <div className="pt-4 mt-6 border-t border-gray-100">
+                  <Button
+                    variant="ghost"
+                    onClick={handleDeleteTeam}
+                    disabled={isDeleting}
+                    className="text-red-600 hover:text-red-700 hover:bg-red-50 w-full"
+                  >
+                    {isDeleting ? '처리 중...' : '팀 삭제'}
+                  </Button>
+                </div>
+              </>
+            ) : (
+              <div className="mt-6">
+                <p className="text-mute text-sm">팀 멤버로 등록되어 있습니다. 팀 정보는 전용 페이지에서 확인할 수 있어요.</p>
+              </div>
+            )}
+          </div>
+        )}
 
         {/* 비밀번호 변경 섹션 - 카카오 로그인 사용자는 숨김 */}
         {(() => {

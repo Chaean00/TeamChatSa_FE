@@ -13,49 +13,90 @@ function TeamsPage() {
   const [isLastPage, setIsLastPage] = useState(false)
   const observerTarget = useRef(null)
 
-  useEffect(() => {
-    fetchTeams(0, true)
-  }, [])
+  // 검색 필터 상태 (입력 중인 필터)
+  const [tempTeamName, setTempTeamName] = useState('')
+  
+  // 적용된 검색 필터 상태
+  const [appliedTeamName, setAppliedTeamName] = useState('')
 
-  const fetchTeams = async (pageNum = 0, isInitial = false) => {
-    try {
-      if (isInitial) {
-        setIsLoading(true)
-      } else {
-        setIsLoadingMore(true)
-      }
-      setError(null)
-      const res = await api.get('/v1/teams', {
-        params: {
-          page: pageNum,
-          size: 20
+  const fetchTeams = useCallback(
+    async (pageNum = 0) => {
+      const isInitial = pageNum === 0
+      try {
+        if (isInitial) {
+          setIsLoading(true)
+        } else {
+          setIsLoadingMore(true)
         }
-      })
-      const responseData = res.data?.data
-      const teamsData = responseData?.content || []
-      const last = responseData?.last ?? false
+        setError(null)
+        
+        const params = {
+          page: pageNum,
+          size: 20,
+        }
+        
+        // 검색 필터 파라미터 추가
+        if (appliedTeamName) {
+          params.teamName = appliedTeamName
+        }
+        
+        const res = await api.get('/v1/teams', { params })
+        const responseData = res.data?.data
+        const teamsData = responseData?.content || []
+        const last = responseData?.last ?? false
 
-      if (isInitial) {
-        setTeams(teamsData)
-      } else {
-        setTeams(prev => [...prev, ...teamsData])
+        setTeams((prev) => (isInitial ? teamsData : [...prev, ...teamsData]))
+        setIsLastPage(last)
+      } catch (e) {
+        const errorMessage = e.response?.data?.message || e.message || '팀 목록을 불러오는데 실패했습니다.'
+        setError(errorMessage)
+      } finally {
+        setIsLoading(false)
+        setIsLoadingMore(false)
       }
-      setIsLastPage(last)
-      setPage(pageNum)
-    } catch (e) {
-      const errorMessage = e.response?.data?.message || e.message || '팀 목록을 불러오는데 실패했습니다.'
-      setError(errorMessage)
-    } finally {
-      setIsLoading(false)
-      setIsLoadingMore(false)
+    },
+    [appliedTeamName]
+  )
+
+  // 적용된 검색 필터 변경 시 검색 실행 (초기 로드 포함)
+  useEffect(() => {
+    setPage(0)
+    setTeams([])
+    setIsLastPage(false)
+    fetchTeams(0)
+  }, [appliedTeamName, fetchTeams])
+
+  // page 변경 시 다음 페이지 로드
+  useEffect(() => {
+    if (page > 0) {
+      fetchTeams(page)
     }
+  }, [page, fetchTeams])
+
+  const handleTeamNameChange = (value) => {
+    setTempTeamName(value)
+  }
+  
+  const applySearch = () => {
+    setAppliedTeamName(tempTeamName)
+    setPage(0)
+    setTeams([])
+    setIsLastPage(false)
+  }
+  
+  const resetSearch = () => {
+    setTempTeamName('')
+    setAppliedTeamName('')
+    setPage(0)
+    setTeams([])
+    setIsLastPage(false)
   }
 
   const loadMore = useCallback(() => {
-    if (!isLoadingMore && !isLastPage) {
-      fetchTeams(page + 1, false)
+    if (!isLoadingMore && !isLastPage && !isLoading) {
+      setPage((prev) => prev + 1)
     }
-  }, [page, isLoadingMore, isLastPage])
+  }, [isLoadingMore, isLastPage, isLoading])
 
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -90,6 +131,41 @@ function TeamsPage() {
         </Link>
       </div>
 
+      {/* 검색 섹션 */}
+      <div className="rounded-2xl border border-gray-100 bg-white/80 shadow-card p-6 mb-6">
+        <div className="grid gap-4">
+          <div className="flex items-center justify-between">
+            <h3 className="text-lg font-semibold text-ink">팀 검색</h3>
+            {appliedTeamName && (
+              <button
+                onClick={resetSearch}
+                className="text-sm text-mute hover:text-ink transition-colors"
+              >
+                초기화
+              </button>
+            )}
+          </div>
+          
+          <div className="flex gap-2">
+            <input
+              type="text"
+              placeholder="팀 이름을 입력하세요"
+              value={tempTeamName}
+              onChange={(e) => handleTeamNameChange(e.target.value)}
+              onKeyPress={(e) => {
+                if (e.key === 'Enter') {
+                  applySearch()
+                }
+              }}
+              className="flex-1 border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary-200 text-sm"
+            />
+            <Button onClick={applySearch} className="px-6">
+              검색
+            </Button>
+          </div>
+        </div>
+      </div>
+
       {isLoading ? (
         <div className="text-center py-10">
           <p className="text-mute">로딩 중...</p>
@@ -100,7 +176,9 @@ function TeamsPage() {
         </div>
       ) : teams.length === 0 ? (
         <div className="text-center py-10">
-          <p className="text-mute">등록된 팀이 없습니다.</p>
+          <p className="text-mute">
+            {appliedTeamName ? `"${appliedTeamName}"에 대한 검색 결과가 없습니다.` : '등록된 팀이 없습니다.'}
+          </p>
         </div>
       ) : (
         <>
@@ -111,15 +189,21 @@ function TeamsPage() {
                 onClick={() => navigate(`/teams/${team.id}`)}
                 className="rounded-xl border border-gray-100 p-4 bg-white/70 shadow-card cursor-pointer hover:shadow-lg transition-shadow"
               >
-                {team.img && (
-                  <div className="w-full h-40 mb-3 rounded-lg overflow-hidden bg-gray-100">
+                <div className="w-full h-40 mb-3 rounded-lg overflow-hidden bg-gray-100 flex items-center justify-center">
+                  {team.img ? (
                     <img
                       src={team.img}
                       alt={team.name}
                       className="w-full h-full object-cover"
                     />
-                  </div>
-                )}
+                  ) : (
+                    <div className="w-full h-full bg-primary-100 flex items-center justify-center">
+                      <span className="text-primary-600 font-semibold text-2xl">
+                        {team.name ? team.name.charAt(0).toUpperCase() : 'T'}
+                      </span>
+                    </div>
+                  )}
+                </div>
                 <div className="text-ink font-medium text-lg mb-1">{team.name}</div>
                 <div className="text-mute text-sm mb-2">{team.area}</div>
                 {team.description && (

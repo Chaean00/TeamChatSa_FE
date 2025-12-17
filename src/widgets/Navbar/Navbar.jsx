@@ -2,6 +2,7 @@ import { Link, NavLink, useNavigate } from 'react-router-dom'
 import { useAuthStore } from '../../shared/store/authStore'
 import { useAuth } from '../../shared/hook/useAuth'
 import { useUser } from '../../shared/hook/useUser'
+import NotificationBell from '../../shared/components/NotificationBell'
 
 function Navbar() {
   const navigate = useNavigate()
@@ -10,8 +11,9 @@ function Navbar() {
   const { user } = useUser()
   const isAuthenticated = Boolean(token)
 
-  const handleLogout = () => {
-    logout()
+  const handleLogout = async () => {
+    await logout()
+    alert('로그아웃되었습니다.')
     navigate('/', { replace: true })
   }
 
@@ -29,8 +31,9 @@ function Navbar() {
             <>
               <NavLink to="/teams/create" className={({isActive}) => isActive ? 'text-primary-600' : 'text-ink'}>팀 생성</NavLink>
               <NavLink to="/mypage" className={({isActive}) => isActive ? 'text-primary-600' : 'text-ink'}>마이페이지</NavLink>
-              {(user?.userName || user?.name) && (
-                <span className="text-mute">{user?.userName || user?.name} 님</span>
+              <NotificationBell />
+              {(user?.nickname || user?.userName || user?.name) && (
+                <span className="text-mute">{user?.nickname || user?.userName || user?.name} 님</span>
               )}
               <button onClick={handleLogout} className="text-ink hover:text-primary-600">
                 로그아웃

@@ -2,6 +2,7 @@ import { useEffect, useState, useRef } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { api } from '../../shared/api/client'
 import { setAuthToken } from '../../shared/store/authStore'
+import { prefetchUser } from '../../shared/hook/useUser'
 
 function KakaoCallbackPage() {
   const { search } = useLocation()
@@ -31,6 +32,10 @@ function KakaoCallbackPage() {
     // 백엔드가 토큰을 직접 전달한 경우 (URL 파라미터로)
     if (token) {
       setAuthToken(token)
+      // 로그인 성공 후 즉시 사용자 정보를 미리 조회하여 캐싱
+      prefetchUser().catch(err => {
+        console.warn('카카오 로그인 후 사용자 정보 조회 실패:', err)
+      })
       alert('카카오 로그인이 완료되었습니다.')
       const targetPath = state ? decodeURIComponent(state) : '/'
       navigate(targetPath, { replace: true })
@@ -54,6 +59,11 @@ function KakaoCallbackPage() {
         }
         
         setAuthToken(receivedToken)
+        
+        // 로그인 성공 후 즉시 사용자 정보를 미리 조회하여 캐싱
+        prefetchUser().catch(err => {
+          console.warn('카카오 로그인 후 사용자 정보 조회 실패:', err)
+        })
         
         // 성공 메시지 표시 (회원가입인지 로그인인지 확인)
         const isNewUser = res?.data?.isNewUser ?? res?.data?.newUser ?? false

@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react'
 import { useAuthStore, setAuthToken, getAuthToken } from '../store/authStore'
-import { clearUserCache } from './useUser'
+import { clearUserCache, prefetchUser } from './useUser'
 import { api } from '../api/client'
 
 export function useAuth() {
@@ -20,6 +20,13 @@ export function useAuth() {
         throw new Error('토큰이 응답에 없습니다.')
       }
       setAuthToken(token)
+      
+      // 로그인 성공 후 즉시 사용자 정보를 미리 조회하여 캐싱
+      // 이렇게 하면 페이지 이동 후 useUser가 이미 캐시된 데이터를 사용할 수 있음
+      prefetchUser().catch(err => {
+        // 사용자 정보 조회 실패는 무시 (나중에 다시 시도됨)
+        console.warn('로그인 후 사용자 정보 조회 실패:', err)
+      })
       
       return true
     } catch (e) {
