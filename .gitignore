@@ -74,4 +74,6 @@ $RECYCLE.BIN/
 *.lnk
 
 # env
-.env
+.env.local
+
+.package-lock.json
