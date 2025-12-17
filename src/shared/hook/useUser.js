@@ -16,6 +16,50 @@ export function clearUserCache() {
   isFetching = false
 }
 
+// 사용자 정보를 미리 조회하여 캐싱하는 함수 (로그인 후 사용)
+export async function prefetchUser() {
+  const token = getAuthToken()
+  if (!token) {
+    return null
+  }
+
+  // 이미 요청 중이거나 캐시가 있으면 기존 것 사용
+  if (loadingPromise && isFetching) {
+    return loadingPromise
+  }
+
+  if (cachedUser) {
+    return cachedUser
+  }
+
+  // 요청 중이 아니면 새로 요청
+  if (isFetching) {
+    return null
+  }
+
+  isFetching = true
+  isLoadingGlobal = true
+
+  const promise = (async () => {
+    try {
+      const res = await api.get('/v1/users')
+      const userData = res.data?.data?.data || res.data?.data || res.data
+      cachedUser = userData
+      return userData
+    } catch (e) {
+      console.error('사용자 정보 조회 실패:', e)
+      return null
+    } finally {
+      isLoadingGlobal = false
+      loadingPromise = null
+      isFetching = false
+    }
+  })()
+
+  loadingPromise = promise
+  return promise
+}
+
 export function useUser() {
   const [user, setUser] = useState(cachedUser)
   const [isLoading, setIsLoading] = useState(!cachedUser && isLoadingGlobal)

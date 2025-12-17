@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react'
 import { useAuthStore, setAuthToken, getAuthToken } from '../store/authStore'
-import { clearUserCache } from './useUser'
+import { clearUserCache, prefetchUser } from './useUser'
 import { api } from '../api/client'
 
 export function useAuth() {
@@ -20,6 +20,13 @@ export function useAuth() {
         throw new Error('토큰이 응답에 없습니다.')
       }
       setAuthToken(token)
+      
+      // 로그인 성공 후 즉시 사용자 정보를 미리 조회하여 캐싱
+      // 이렇게 하면 페이지 이동 후 useUser가 이미 캐시된 데이터를 사용할 수 있음
+      prefetchUser().catch(err => {
+        // 사용자 정보 조회 실패는 무시 (나중에 다시 시도됨)
+        console.warn('로그인 후 사용자 정보 조회 실패:', err)
+      })
       
       return true
     } catch (e) {
@@ -42,9 +49,18 @@ export function useAuth() {
   }, [])
 
   const isAuthenticated = Boolean(getAuthToken())
-  const logout = useCallback(() => {
-    clearAuth()
-    clearUserCache()
+  const logout = useCallback(async () => {
+    try {
+      // refreshToken 삭제를 위한 로그아웃 API 호출
+      await api.post('/v1/auth/logout')
+    } catch (e) {
+      // 로그아웃 API 실패해도 클라이언트에서는 로그아웃 처리
+      console.error('로그아웃 API 호출 실패:', e)
+    } finally {
+      // accessToken 삭제 및 사용자 캐시 클리어
+      clearAuth()
+      clearUserCache()
+    }
   }, [clearAuth])
 
   const signupWithEmail = useCallback(async ({ userName, email, password, position, phone }) => {
