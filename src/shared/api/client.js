@@ -2,7 +2,8 @@ import axios from "axios";
 import { getAuthToken, setAuthToken } from "../store/authStore";
 
 export const api = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL ? `${import.meta.env.VITE_API_BASE_URL}/api` : '/api',
+  // baseURL: import.meta.env.VITE_API_BASE_URL ? `${import.meta.env.VITE_API_BASE_URL}/api` : '/api',
+  baseURL: "/api",
   withCredentials: true,
 })
 
