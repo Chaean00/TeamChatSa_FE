@@ -1,0 +1,15 @@
+services:
+  web:
+    image: ${DOCKER_IMAGE}:${IMAGE_TAG:-latest}
+    container_name: teamchatsa-web
+    ports:
+      - "${WEB_PORT:-80}:80"
+    environment:
+      API_UPSTREAM: ${API_UPSTREAM:-http://teamchatsa-app:8080}
+    restart: unless-stopped
+    networks:
+      - teamchatsa_default
+
+networks:
+  teamchatsa_default:
+    external: true
