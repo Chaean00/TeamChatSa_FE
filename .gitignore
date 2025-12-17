@@ -75,5 +75,3 @@ $RECYCLE.BIN/
 
 # env
 .env.local
-
-package-lock.json
