@@ -1,16 +1,27 @@
-# React + Vite
+# TeamChatSa (팀찾사) Frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Backend Repository : https://github.com/Chaean00/TeamChatSa-BE
 
-Currently, two official plugins are available:
+조기축구 팀들이 상대팀을 찾기 위해 반복하는 비효율을 줄이기 위해 만든 **아마추어 축구팀 매칭 플랫폼**입니다.
+- 네이버 카페 / 커뮤니티 글 검색 / 지인 추천 등의 과정을 플랫폼화
+<img width="1920" height="911" alt="팀찾사1" src="https://github.com/user-attachments/assets/52a19f5f-cb62-417a-9a11-b39d6f08de57" />
+<img width="1905" height="909" alt="팀찾사2" src="https://github.com/user-attachments/assets/2440246a-c913-4739-9b2c-75acdae06b39" />
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+----
 
-## React Compiler
+## 기술 스택
 
-The React Compiler is currently not compatible with SWC. See [this issue](https://github.com/vitejs/vite-plugin-react/issues/428) for tracking the progress.
+### Frontend
+- JavaScript
+- React, Vite
+- Zustand
 
-## Expanding the ESLint configuration
+----
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+## 실행 방법
+
+```bash
+git clone https://github.com/Chaean00/TeamChatSa_FE.git
+cd TeamChatSa_FE
+npm install
+npm start
