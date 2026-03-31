@@ -1,44 +1,77 @@
 @import "tailwindcss";
 
 @theme {
-  --font-sans: "Inter", "Pretendard Variable", system-ui, sans-serif;
-
-  /* Softer, eye-friendly teal palette */
-  --color-primary-50: #f0fdfa;
-  --color-primary-100: #ccfbf1;
-  --color-primary-200: #99f6e4;
-  --color-primary-300: #5eead4;
-  --color-primary-400: #2dd4bf;
-  --color-primary-500: #14b8a6;
-  --color-primary-600: #0d9488;
-  --color-primary-700: #0f766e;
-  --color-primary-800: #115e59;
-  --color-primary-900: #134e4a;
-
-  /* Softer neutrals */
-  --color-ink: #111827;
-  --color-mute: #6b7280;
-
-  --radius-xl: 14px;
-  --shadow-card: 0 8px 24px rgba(15, 23, 42, 0.06);
+  --font-sans: "Pretendard Variable", "SUIT Variable", system-ui, sans-serif;
+  --color-primary-50: #ecfeff;
+  --color-primary-100: #cffafe;
+  --color-primary-200: #a5f3fc;
+  --color-primary-300: #67e8f9;
+  --color-primary-400: #22d3ee;
+  --color-primary-500: #0891b2;
+  --color-primary-600: #0e7490;
+  --color-primary-700: #155e75;
+  --color-ink: #112031;
+  --color-mute: #667085;
+  --radius-xl: 18px;
+  --shadow-card: 0 18px 40px rgba(17, 32, 49, 0.1);
 }
 
-body { margin: 0; min-width: 320px; }
+:root {
+  color-scheme: light;
+  background:
+    radial-gradient(circle at top, rgba(103, 232, 249, 0.28), transparent 28%),
+    linear-gradient(180deg, #f3fbfe 0%, #eef3f8 40%, #f8fafc 100%);
+}
 
-/* Base typography & colors */
-:root { color-scheme: light; }
-html, body {
+html,
+body,
+#root {
+  min-height: 100%;
+}
+
+html,
+body {
+  margin: 0;
+  min-width: 320px;
   font-family: var(--font-sans);
   color: var(--color-ink);
-  background-color: #fff;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-a { text-decoration: none; color: inherit; }
+body {
+  background: transparent;
+  word-break: keep-all;
+  overflow-wrap: break-word;
+}
 
-/* Layout container */
-.container { max-width: 1120px; margin-left: auto; margin-right: auto; padding-left: 1rem; padding-right: 1rem; }
+p,
+h1,
+h2,
+h3,
+label,
+button,
+span {
+  word-break: keep-all;
+}
 
-/* Selection */
-::selection { background: var(--color-primary-100); }
+a {
+  text-decoration: none;
+  color: inherit;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+::selection {
+  background: var(--color-primary-100);
+}
+
+.mobile-shell {
+  width: min(100%, 430px);
+  margin: 0 auto;
+}
