@@ -1,6 +1,7 @@
 import { useState, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { api } from '../shared/api/client'
+import { getErrorMessage } from '../shared/lib/errorMessage'
 import { useUser } from '../shared/hook/useUser'
 import Button from '../shared/ui/Button.jsx'
 
@@ -20,6 +21,16 @@ function TeamCreatePage() {
     contact: '',
     level: '',
   })
+
+  const levelOptions = [
+    { value: '1', label: '1 - 입문' },
+    { value: '2', label: '2 - 초급' },
+    { value: '3', label: '3 - 초중급' },
+    { value: '4', label: '4 - 중급' },
+    { value: '5', label: '5 - 중상급' },
+    { value: '6', label: '6 - 상급' },
+    { value: '7', label: '7 - 최상급' },
+  ]
 
   const handleChange = (e) => {
     const { name, value } = e.target
@@ -96,7 +107,7 @@ function TeamCreatePage() {
         description: formData.description || '',
         contactType: formData.contactType,
         contact: formData.contact,
-        level: formData.level,
+        level: Number(formData.level),
       }
       
       if (imageUrl) {
@@ -112,22 +123,21 @@ function TeamCreatePage() {
         navigate('/teams', { replace: true })
       }
     } catch (e) {
-      const errorMessage = e.response?.data?.message || e.message || '팀 생성에 실패했습니다.'
-      setError(errorMessage)
+      setError(getErrorMessage(e, '팀 생성에 실패했습니다.'))
     } finally {
       setIsLoading(false)
     }
   }
 
   return (
-    <section className="py-10 sm:py-14">
+    <section className="py-4">
       <div className="max-w-2xl mx-auto">
         <div className="grid gap-2 mb-6">
           <h2 className="text-3xl font-semibold text-ink">팀 생성</h2>
-          <p className="text-mute">새로운 팀을 만들고 다른 팀과 매치를 시작해보세요.</p>
+          <p className="text-mute">새 팀을 만들고 매치를 시작해보세요.</p>
         </div>
 
-        <div className="rounded-2xl border border-gray-100 bg-white/80 shadow-card p-6">
+        <div className="rounded-[28px] border border-gray-100 bg-white/90 shadow-card p-5">
           <form onSubmit={onSubmit} className="grid gap-4">
             {/* 1. 팀 이미지 */}
             <label className="grid gap-1">
@@ -224,11 +234,11 @@ function TeamCreatePage() {
                 className="border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary-200"
               >
                 <option value="">선택해주세요</option>
-                <option value="하하">하하</option>
-                <option value="중하">중하</option>
-                <option value="중">중</option>
-                <option value="중상">중상</option>
-                <option value="상">상</option>
+                {levelOptions.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
               </select>
             </label>
 
@@ -271,8 +281,8 @@ function TeamCreatePage() {
               <p className="text-red-600 text-sm">{error}</p>
             )}
 
-            <div className="flex gap-3 pt-2">
-              <Button type="submit" disabled={isLoading} className="flex-1">
+            <div className="grid grid-cols-2 gap-3 pt-2">
+              <Button type="submit" disabled={isLoading} className="w-full">
                 팀 생성하기
               </Button>
               <Button 
@@ -280,6 +290,7 @@ function TeamCreatePage() {
                 variant="ghost" 
                 onClick={() => navigate('/teams', { replace: true })}
                 disabled={isLoading}
+                className="w-full"
               >
                 취소
               </Button>
@@ -292,4 +303,3 @@ function TeamCreatePage() {
 }
 
 export default TeamCreatePage
-

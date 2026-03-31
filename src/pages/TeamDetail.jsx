@@ -40,7 +40,7 @@ function TeamDetailPage() {
 
     try {
       setIsApplying(true)
-      await api.post(`/v1/teams/${teamId}/join`, {
+      await api.post(`/v1/teams/${teamId}/applications`, {
         message: applyMessage
       })
       alert('가입 신청이 완료되었습니다.')
@@ -87,7 +87,7 @@ function TeamDetailPage() {
   const hasTeam = Boolean(user?.teamId)
 
   return (
-    <section className="py-10 sm:py-14">
+    <section className="py-4">
       <div className="max-w-2xl mx-auto">
         <Button
           variant="ghost"
@@ -97,7 +97,7 @@ function TeamDetailPage() {
           ← 목록으로
         </Button>
 
-        <div className="rounded-2xl border border-gray-100 bg-white/80 shadow-card p-6">
+        <div className="rounded-[28px] border border-gray-100 bg-white/90 shadow-card p-5">
           {team.img && (
             <div className="w-full h-64 mb-6 rounded-lg overflow-hidden bg-gray-100">
               <img
@@ -110,14 +110,14 @@ function TeamDetailPage() {
 
           <div className="grid gap-4">
             <div>
-              <h2 className="text-2xl font-semibold text-ink mb-2">{team.name}</h2>
-              <div className="text-mute text-sm">{team.area}</div>
+              <h2 className="mb-2 break-keep text-[28px] font-semibold leading-tight text-ink">{team.name}</h2>
+              <div className="break-keep text-mute text-sm">{team.area}</div>
             </div>
 
             {team.description && (
               <div>
                 <h3 className="text-sm font-medium text-ink mb-2">팀 소개</h3>
-                <p className="text-mute text-sm whitespace-pre-wrap">{team.description}</p>
+                <p className="break-keep text-mute text-sm whitespace-pre-wrap">{team.description}</p>
               </div>
             )}
 
@@ -125,7 +125,7 @@ function TeamDetailPage() {
               <h3 className="text-sm font-medium text-ink mb-2">팀 정보</h3>
               <div className="text-mute text-sm mb-1">멤버 {team.memberCount}명</div>
               {team.level && (
-                <div className="text-mute text-sm">레벨: {team.level}</div>
+                <div className="text-mute text-sm">레벨: {team.levelLabel || `Level ${team.level}`}</div>
               )}
             </div>
 
@@ -163,4 +163,3 @@ function TeamDetailPage() {
 }
 
 export default TeamDetailPage
-

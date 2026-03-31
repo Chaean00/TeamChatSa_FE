@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { api } from '../shared/api/client'
+import { getErrorMessage } from '../shared/lib/errorMessage'
 import Button from '../shared/ui/Button.jsx'
 import KakaoMap from '../shared/components/KakaoMap.jsx'
 
@@ -68,8 +69,7 @@ function MatchCreatePage() {
       alert('매치가 성공적으로 등록되었습니다.')
       navigate('/matches', { replace: true })
     } catch (e) {
-      const errorMessage = e.response?.data?.message || e.message || '매치 등록에 실패했습니다.'
-      setError(errorMessage)
+      setError(getErrorMessage(e, '매치 등록에 실패했습니다.'))
     } finally {
       setIsLoading(false)
     }
@@ -80,7 +80,7 @@ function MatchCreatePage() {
       <div className="max-w-2xl mx-auto">
         <div className="grid gap-2 mb-6">
           <h2 className="text-3xl font-semibold text-ink">매치 등록</h2>
-          <p className="text-mute">새로운 매치를 등록하고 다른 팀과 매칭해보세요.</p>
+          <p className="text-mute">새 매치를 등록하고 상대 팀을 모집해보세요.</p>
         </div>
 
         <div className="rounded-2xl border border-gray-100 bg-white/80 shadow-card p-6">
@@ -219,8 +219,8 @@ function MatchCreatePage() {
               <p className="text-red-600 text-sm">{error}</p>
             )}
 
-            <div className="flex gap-3 pt-2">
-              <Button type="submit" disabled={isLoading} className="flex-1">
+            <div className="grid grid-cols-2 gap-3 pt-2">
+              <Button type="submit" disabled={isLoading} className="w-full">
                 매치 등록하기
               </Button>
               <Button 
@@ -228,6 +228,7 @@ function MatchCreatePage() {
                 variant="ghost" 
                 onClick={() => navigate('/matches', { replace: true })}
                 disabled={isLoading}
+                className="w-full"
               >
                 취소
               </Button>
@@ -240,4 +241,3 @@ function MatchCreatePage() {
 }
 
 export default MatchCreatePage
-

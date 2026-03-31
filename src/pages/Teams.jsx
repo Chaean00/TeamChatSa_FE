@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { api } from '../shared/api/client'
+import { getErrorMessage } from '../shared/lib/errorMessage'
 import Button from '../shared/ui/Button.jsx'
 
 function TeamsPage() {
@@ -48,8 +49,7 @@ function TeamsPage() {
         setTeams((prev) => (isInitial ? teamsData : [...prev, ...teamsData]))
         setIsLastPage(last)
       } catch (e) {
-        const errorMessage = e.response?.data?.message || e.message || '팀 목록을 불러오는데 실패했습니다.'
-        setError(errorMessage)
+        setError(getErrorMessage(e, '팀 목록을 불러오지 못했습니다.'))
       } finally {
         setIsLoading(false)
         setIsLoadingMore(false)
@@ -124,15 +124,15 @@ function TeamsPage() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
         <div className="grid gap-2">
           <h2 className="text-3xl font-semibold text-ink">팀 찾기</h2>
-          <p className="text-mute">다양한 팀을 찾아보고 가입 신청을 해보세요.</p>
+          <p className="text-mute">원하는 팀을 찾아 가입을 신청해보세요.</p>
         </div>
         <Link to="/teams/create" className="w-full sm:w-auto">
-          <Button className="w-full sm:w-auto">팀 생성하기</Button>
+          <Button className="w-full sm:w-auto px-3">팀 생성하기</Button>
         </Link>
       </div>
 
       {/* 검색 섹션 */}
-      <div className="rounded-2xl border border-gray-100 bg-white/80 shadow-card p-6 mb-6">
+      <div className="rounded-[28px] border border-gray-100 bg-white/90 shadow-card p-5 mb-6">
         <div className="grid gap-4">
           <div className="flex items-center justify-between">
             <h3 className="text-lg font-semibold text-ink">팀 검색</h3>
@@ -146,7 +146,7 @@ function TeamsPage() {
             )}
           </div>
           
-          <div className="flex gap-2">
+          <div className="grid grid-cols-[minmax(0,1fr)_auto] gap-2">
             <input
               type="text"
               placeholder="팀 이름을 입력하세요"
@@ -157,9 +157,9 @@ function TeamsPage() {
                   applySearch()
                 }
               }}
-              className="flex-1 border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary-200 text-sm"
+              className="min-w-0 w-full border border-gray-200 rounded-xl px-3 py-3 focus:outline-none focus:ring-2 focus:ring-primary-200 text-sm"
             />
-            <Button onClick={applySearch} className="px-6">
+            <Button onClick={applySearch} className="px-4">
               검색
             </Button>
           </div>
@@ -187,7 +187,7 @@ function TeamsPage() {
               <div
                 key={team.id}
                 onClick={() => navigate(`/teams/${team.id}`)}
-                className="rounded-xl border border-gray-100 p-4 bg-white/70 shadow-card cursor-pointer hover:shadow-lg transition-shadow"
+                className="rounded-[24px] border border-gray-100 p-4 bg-white/70 shadow-card cursor-pointer hover:shadow-lg transition-shadow"
               >
                 <div className="w-full h-40 mb-3 rounded-lg overflow-hidden bg-gray-100 flex items-center justify-center">
                   {team.img ? (
@@ -204,8 +204,8 @@ function TeamsPage() {
                     </div>
                   )}
                 </div>
-                <div className="text-ink font-medium text-lg mb-1">{team.name}</div>
-                <div className="text-mute text-sm mb-2">{team.area}</div>
+                <div className="line-clamp-2 break-keep text-ink font-medium text-lg mb-1">{team.name}</div>
+                <div className="line-clamp-2 break-keep text-mute text-sm mb-2">{team.area}</div>
                 {team.description && (
                   <div className="text-mute text-sm mb-2 line-clamp-2">{team.description}</div>
                 )}
@@ -228,4 +228,3 @@ function TeamsPage() {
 }
 
 export default TeamsPage
-

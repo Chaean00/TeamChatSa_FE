@@ -3,18 +3,53 @@ import { useNavigate } from 'react-router-dom'
 import { api } from '../shared/api/client'
 import Button from '../shared/ui/Button.jsx'
 
+const regions = [
+  { value: '', label: '전체' },
+  { value: '서울', label: '서울' },
+  { value: '부산', label: '부산' },
+  { value: '대구', label: '대구' },
+  { value: '인천', label: '인천' },
+  { value: '광주', label: '광주' },
+  { value: '대전', label: '대전' },
+  { value: '울산', label: '울산' },
+  { value: '세종', label: '세종' },
+  { value: '경기', label: '경기' },
+  { value: '강원', label: '강원' },
+  { value: '충청북도', label: '충북' },
+  { value: '충청남도', label: '충남' },
+  { value: '전북특별자치도', label: '전북' },
+  { value: '전라남도', label: '전남' },
+  { value: '경상북도', label: '경북' },
+  { value: '경상남도', label: '경남' },
+  { value: '제주특별자치도', label: '제주' },
+]
+
+const headCountOptions = [
+  { value: '', label: '전체' },
+  { value: '4', label: '4 vs 4' },
+  { value: '5', label: '5 vs 5' },
+  { value: '6', label: '6 vs 6' },
+  { value: '7', label: '7 vs 7' },
+  { value: '8', label: '8 vs 8' },
+  { value: '9', label: '9 vs 9' },
+  { value: '10', label: '10 vs 10' },
+  { value: '11', label: '11 vs 11' },
+]
+
 function MatchesMapPage() {
   const navigate = useNavigate()
   const mapRef = useRef(null)
   const mapInstanceRef = useRef(null)
   const markersRef = useRef([])
   const clustererRef = useRef(null)
+  const filterSheetRef = useRef(null)
   const [isMapLoaded, setIsMapLoaded] = useState(false)
   const [matches, setMatches] = useState([])
   const [isLoading, setIsLoading] = useState(false)
   const [showSearchButton, setShowSearchButton] = useState(false)
   const [currentBounds, setCurrentBounds] = useState(null)
   const [error, setError] = useState(null)
+  const [isFilterOpen, setIsFilterOpen] = useState(false)
   
   // 필터 상태
   const [tempFilters, setTempFilters] = useState({
@@ -31,28 +66,6 @@ function MatchesMapPage() {
     headCount: '',
   })
   
-  // 한국 시도 목록
-  const regions = [
-    { value: '', label: '전체' },
-    { value: '서울', label: '서울' },
-    { value: '부산', label: '부산' },
-    { value: '대구', label: '대구' },
-    { value: '인천', label: '인천' },
-    { value: '광주', label: '광주' },
-    { value: '대전', label: '대전' },
-    { value: '울산', label: '울산' },
-    { value: '세종', label: '세종' },
-    { value: '경기', label: '경기' },
-    { value: '강원', label: '강원' },
-    { value: '충청북도', label: '충북' },
-    { value: '충청남도', label: '충남' },
-    { value: '전북특별자치도', label: '전북' },
-    { value: '전라남도', label: '전남' },
-    { value: '경상북도', label: '경북' },
-    { value: '경상남도', label: '경남' },
-    { value: '제주특별자치도', label: '제주' },
-  ]
-
   // 카카오맵 스크립트 로드 (클러스터 라이브러리 포함)
   useEffect(() => {
     const apiKey = import.meta.env.VITE_KAKAO_MAP_API_KEY
@@ -79,6 +92,38 @@ function MatchesMapPage() {
 
     document.head.appendChild(script)
   }, [])
+
+  useEffect(() => {
+    if (!isFilterOpen) return
+
+    const scrollY = window.scrollY
+    document.body.style.position = 'fixed'
+    document.body.style.top = `-${scrollY}px`
+    document.body.style.left = '0'
+    document.body.style.right = '0'
+    document.body.style.width = '100%'
+    document.body.style.overflow = 'hidden'
+
+    const focusTimer = window.setTimeout(() => {
+      try {
+        filterSheetRef.current?.focus({ preventScroll: true })
+      } catch {
+        filterSheetRef.current?.focus()
+      }
+    }, 50)
+
+    return () => {
+      window.clearTimeout(focusTimer)
+      const storedTop = document.body.style.top
+      document.body.style.position = ''
+      document.body.style.top = ''
+      document.body.style.left = ''
+      document.body.style.right = ''
+      document.body.style.width = ''
+      document.body.style.overflow = ''
+      window.scrollTo(0, Math.abs(parseInt(storedTop || '0', 10)))
+    }
+  }, [isFilterOpen])
 
   // 지도 초기화
   useEffect(() => {
@@ -457,6 +502,7 @@ function MatchesMapPage() {
         swLng: currentBounds.swLng,
         neLat: currentBounds.neLat,
         neLng: currentBounds.neLng,
+        zoomLevel: mapInstanceRef.current?.getLevel?.() ?? 5,
       }
 
       // 필터 파라미터 추가
@@ -465,9 +511,6 @@ function MatchesMapPage() {
       }
       if (filters.endDate) {
         params.endDate = filters.endDate
-      }
-      if (filters.region) {
-        params.region = filters.region
       }
       if (filters.headCount) {
         params.headCount = parseInt(filters.headCount, 10)
@@ -523,14 +566,34 @@ function MatchesMapPage() {
     fetchMatches()
   }
 
+  const dateRangeChip = appliedFilters.startDate && appliedFilters.endDate
+    ? `${appliedFilters.startDate}~${appliedFilters.endDate}`
+    : appliedFilters.startDate
+      ? `${appliedFilters.startDate}~`
+      : appliedFilters.endDate
+        ? `~${appliedFilters.endDate}`
+        : null
+  const activeFilterChips = [
+    dateRangeChip,
+    appliedFilters.region || null,
+    appliedFilters.headCount ? `${appliedFilters.headCount} vs ${appliedFilters.headCount}` : null,
+  ].filter(Boolean)
+
   return (
-    <section className="py-10 sm:py-14">
+    <section className="py-4">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
         <div className="grid gap-2">
           <h2 className="text-3xl font-semibold text-ink">지도로 매치 찾기</h2>
-          <p className="text-mute">지도를 이동하여 원하는 지역의 매치를 찾아보세요.</p>
+          <p className="text-mute">지도로 원하는 지역의 매치를 찾아보세요.</p>
         </div>
-        <div className="flex gap-2">
+        <div className="grid grid-cols-3 gap-2 sm:flex">
+          <Button
+            onClick={() => setIsFilterOpen(true)}
+            variant="ghost"
+            className="w-full sm:w-auto px-3"
+          >
+            필터
+          </Button>
           <Button 
             onClick={() => navigate('/matches')} 
             variant="ghost" 
@@ -540,90 +603,24 @@ function MatchesMapPage() {
           </Button>
           <Button 
             onClick={() => navigate('/matches/create')} 
-            className="w-full sm:w-auto"
+            className="w-full sm:w-auto px-3"
           >
             매치 등록하기
           </Button>
         </div>
       </div>
 
-      {/* 필터 섹션 */}
-      <div className="rounded-2xl border border-gray-100 bg-white/80 shadow-card p-6 mb-6">
-        <div className="grid gap-4">
-          <div className="flex items-center justify-between">
-            <h3 className="text-lg font-semibold text-ink">필터</h3>
-            <button
-              onClick={resetFilters}
-              className="text-sm text-mute hover:text-ink transition-colors"
-            >
-              초기화
-            </button>
-          </div>
-          
-          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            <label className="grid gap-1">
-              <span className="text-sm text-mute">시작 날짜</span>
-              <input
-                type="date"
-                value={tempFilters.startDate}
-                onChange={(e) => handleFilterChange('startDate', e.target.value)}
-                className="border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary-200 text-sm"
-              />
-            </label>
-            
-            <label className="grid gap-1">
-              <span className="text-sm text-mute">종료 날짜</span>
-              <input
-                type="date"
-                value={tempFilters.endDate}
-                onChange={(e) => handleFilterChange('endDate', e.target.value)}
-                min={tempFilters.startDate || undefined}
-                className="border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary-200 text-sm"
-              />
-            </label>
-            
-            <label className="grid gap-1">
-              <span className="text-sm text-mute">지역</span>
-              <select
-                value={tempFilters.region}
-                onChange={(e) => handleFilterChange('region', e.target.value)}
-                className="border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary-200 text-sm"
-              >
-                {regions.map((region) => (
-                  <option key={region.value} value={region.value}>
-                    {region.label}
-                  </option>
-                ))}
-              </select>
-            </label>
-            
-            <label className="grid gap-1">
-              <span className="text-sm text-mute">경기 인원</span>
-              <select
-                value={tempFilters.headCount}
-                onChange={(e) => handleFilterChange('headCount', e.target.value)}
-                className="border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary-200 text-sm"
-              >
-                <option value="">전체</option>
-                <option value="4">4 vs 4</option>
-                <option value="5">5 vs 5</option>
-                <option value="6">6 vs 6</option>
-                <option value="7">7 vs 7</option>
-                <option value="8">8 vs 8</option>
-                <option value="9">9 vs 9</option>
-                <option value="10">10 vs 10</option>
-                <option value="11">11 vs 11</option>
-              </select>
-            </label>
-          </div>
-          
-          <div className="flex justify-end pt-2">
-            <Button onClick={applyFilters} className="px-6">
-              적용
-            </Button>
+      {activeFilterChips.length > 0 && (
+        <div className="mb-5 rounded-[24px] border border-gray-100 bg-white/90 p-4 shadow-card">
+          <div className="flex flex-wrap gap-2">
+            {activeFilterChips.map((chip) => (
+              <span key={chip} className="rounded-full bg-primary-50 px-3 py-1 text-xs font-medium text-primary-700">
+                {chip}
+              </span>
+            ))}
           </div>
         </div>
-      </div>
+      )}
 
       {/* 지도 영역 */}
       <div className="relative rounded-2xl border border-gray-100 bg-white shadow-card" style={{ overflow: 'visible' }}>
@@ -674,9 +671,99 @@ function MatchesMapPage() {
           현재 지도에서 <span className="font-semibold text-ink">{matches.length}개</span>의 매치를 찾았습니다.
         </div>
       )}
+
+      {isFilterOpen && (
+        <>
+          <button
+            type="button"
+            className="fixed inset-0 z-[60] bg-slate-950/45"
+            onClick={() => setIsFilterOpen(false)}
+            aria-label="필터 닫기"
+          />
+
+          <div className="fixed inset-0 z-[70] overflow-y-auto p-4">
+            <div ref={filterSheetRef} tabIndex={-1} className="mx-auto my-4 flex w-full max-w-[398px] max-h-[calc(100dvh-2rem)] flex-col rounded-[32px] bg-white shadow-[0_24px_60px_rgba(15,23,42,0.22)] focus:outline-none">
+            <div className="overflow-y-auto px-5 pb-4 pt-5">
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <h3 className="text-lg font-semibold text-ink">지도 필터</h3>
+                <p className="mt-1 text-sm text-mute">현재 지도 범위 안에서 원하는 조건만 골라 탐색해보세요.</p>
+              </div>
+              <button type="button" onClick={() => setIsFilterOpen(false)} className="shrink-0 whitespace-nowrap rounded-full bg-slate-100 px-3 py-1 text-sm text-mute">
+                닫기
+              </button>
+            </div>
+
+            <div className="mt-5 grid gap-3">
+              <label className="grid min-w-0 gap-1">
+                <span className="text-sm text-mute">시작 날짜</span>
+                <input
+                  type="date"
+                  value={tempFilters.startDate}
+                  onChange={(e) => handleFilterChange('startDate', e.target.value)}
+                  className="w-full min-w-0 rounded-xl border border-gray-200 px-3 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary-200"
+                />
+              </label>
+
+              <label className="grid min-w-0 gap-1">
+                <span className="text-sm text-mute">종료 날짜</span>
+                <input
+                  type="date"
+                  value={tempFilters.endDate}
+                  onChange={(e) => handleFilterChange('endDate', e.target.value)}
+                  min={tempFilters.startDate || undefined}
+                  className="w-full min-w-0 rounded-xl border border-gray-200 px-3 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary-200"
+                />
+              </label>
+
+              <label className="grid min-w-0 gap-1">
+                <span className="text-sm text-mute">지역</span>
+                <div className="grid grid-cols-2 gap-2 rounded-xl border border-gray-200 p-2">
+                  {regions.map((region) => (
+                    <button
+                      key={region.value || 'all-region'}
+                      type="button"
+                      onClick={() => handleFilterChange('region', region.value)}
+                      className={`rounded-xl px-3 py-2 text-sm font-medium transition ${tempFilters.region === region.value ? 'bg-primary-600 text-white' : 'bg-slate-50 text-ink'}`}
+                    >
+                      {region.label}
+                    </button>
+                  ))}
+                </div>
+              </label>
+
+              <label className="grid min-w-0 gap-1">
+                <span className="text-sm text-mute">경기 인원</span>
+                <div className="grid grid-cols-2 gap-2 rounded-xl border border-gray-200 p-2">
+                  {headCountOptions.map((option) => (
+                    <button
+                      key={option.value || 'all-headcount'}
+                      type="button"
+                      onClick={() => handleFilterChange('headCount', option.value)}
+                      className={`rounded-xl px-3 py-2 text-sm font-medium transition ${tempFilters.headCount === option.value ? 'bg-primary-600 text-white' : 'bg-slate-50 text-ink'}`}
+                    >
+                      {option.label}
+                    </button>
+                  ))}
+                </div>
+              </label>
+            </div>
+
+            </div>
+            <div className="grid grid-cols-2 gap-3 border-t border-slate-100 px-5 py-4">
+              <Button variant="ghost" onClick={resetFilters} className="w-full">
+                초기화
+              </Button>
+              <Button onClick={() => { applyFilters(); setIsFilterOpen(false) }} className="w-full">
+                적용
+              </Button>
+            </div>
+          </div>
+          </div>
+        </>
+      )}
     </section>
   )
 }
 
 export default MatchesMapPage
-

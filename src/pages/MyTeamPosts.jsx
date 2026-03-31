@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useUser } from '../shared/hook/useUser'
 import { api } from '../shared/api/client'
+import { getErrorMessage } from '../shared/lib/errorMessage'
 import Button from '../shared/ui/Button.jsx'
 
 const PAGE_SIZE = 6
@@ -32,7 +33,7 @@ function MyTeamPostsPage() {
         const res = await api.get(`/v1/teams/${user.teamId}`)
         setTeam(res.data?.data)
       } catch (e) {
-        setError(e.response?.data?.message || e.message || '팀 정보를 불러오지 못했습니다.')
+        setError(getErrorMessage(e, '팀 정보를 불러오지 못했습니다.'))
         setTeam(null)
       } finally {
         setIsLoadingTeam(false)
@@ -62,7 +63,7 @@ function MyTeamPostsPage() {
       setPage(pageToLoad)
       setIsLastPage(data?.last ?? true)
     } catch (e) {
-      setError(e.response?.data?.message || e.message || '팀 게시글을 불러오지 못했습니다.')
+      setError(getErrorMessage(e, '팀 게시글을 불러오지 못했습니다.'))
     } finally {
       setIsLoadingPosts(false)
     }
@@ -104,10 +105,10 @@ function MyTeamPostsPage() {
 
     return (
       <>
-        <div className="flex items-center justify-between mb-6">
-          <div>
+        <div className="mb-6 grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3">
+          <div className="min-w-0">
             <p className="text-sm text-mute">팀 이름</p>
-            <h2 className="text-2xl font-semibold text-ink">{team?.name}</h2>
+            <h2 className="line-clamp-2 break-keep text-2xl font-semibold text-ink">{team?.name}</h2>
           </div>
           <Button variant="ghost" onClick={() => navigate('/mypage')}>← 마이페이지로</Button>
         </div>
@@ -119,14 +120,14 @@ function MyTeamPostsPage() {
         ) : (
           <div className="space-y-3">
             {posts.map((post) => (
-              <div key={post.postId} className="p-4 border border-gray-100 rounded-xl flex items-start justify-between gap-4">
-                <div>
+              <div key={post.postId} className="grid grid-cols-[minmax(0,1fr)_auto] gap-3 p-4 border border-gray-100 rounded-[24px]">
+                <div className="min-w-0">
                   <p className="text-sm text-mute">{formatDate(post.matchDate)} {post.matchTime}</p>
-                  <p className="text-lg font-semibold text-ink mt-1">{post.matchTitle}</p>
-                  <p className="text-sm text-mute mt-1">{post.placeName || post.matchAddress}</p>
+                  <p className="line-clamp-2 break-keep text-lg font-semibold text-ink mt-1">{post.matchTitle}</p>
+                  <p className="line-clamp-2 break-keep text-sm text-mute mt-1">{post.placeName || post.matchAddress}</p>
                   <p className="text-xs text-mute mt-1">상태: {post.postStatus === 'OPEN' ? '모집 중' : '마감'}</p>
                 </div>
-                <Button variant="ghost" onClick={() => navigate(`/matches/${post.postId}`)}>상세보기</Button>
+                <Button variant="ghost" className="self-start" onClick={() => navigate(`/matches/${post.postId}`)}>상세보기</Button>
               </div>
             ))}
           </div>
@@ -156,4 +157,3 @@ function MyTeamPostsPage() {
 }
 
 export default MyTeamPostsPage
-

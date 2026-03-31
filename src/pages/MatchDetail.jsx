@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { api } from '../shared/api/client'
+import { getErrorMessage } from '../shared/lib/errorMessage'
 import { useUser } from '../shared/hook/useUser'
 import Button from '../shared/ui/Button.jsx'
 import KakaoMap from '../shared/components/KakaoMap.jsx'
@@ -68,8 +69,7 @@ function MatchDetailPage() {
       const res = await api.get(`/v1/matches/${matchId}`)
       setMatch(res.data?.data)
     } catch (e) {
-      const errorMessage = e.response?.data?.message || e.message || '매치 정보를 불러오는데 실패했습니다.'
-      setError(errorMessage)
+      setError(getErrorMessage(e, '매치 정보를 불러오지 못했습니다.'))
     } finally {
       setIsLoading(false)
     }
@@ -98,8 +98,7 @@ function MatchDetailPage() {
       fetchApplicants()
       fetchMatchDetail()
     } catch (e) {
-      const errorMessage = e.response?.data?.message || e.message || '매치 신청 수락에 실패했습니다.'
-      alert(errorMessage)
+      alert(getErrorMessage(e, '매치 신청 수락에 실패했습니다.'))
     }
   }
 
@@ -113,8 +112,7 @@ function MatchDetailPage() {
       alert('매치 신청을 거절했습니다.')
       fetchApplicants()
     } catch (e) {
-      const errorMessage = e.response?.data?.message || e.message || '매치 신청 거절에 실패했습니다.'
-      alert(errorMessage)
+      alert(getErrorMessage(e, '매치 신청 거절에 실패했습니다.'))
     }
   }
 
@@ -128,8 +126,7 @@ function MatchDetailPage() {
       fetchMatchDetail() // 신청 후 정보 갱신
       setApplyMessage('')
     } catch (e) {
-      const errorMessage = e.response?.data?.message || e.message || '매치 신청에 실패했습니다.'
-      alert(errorMessage)
+      alert(getErrorMessage(e, '매치 신청에 실패했습니다.'))
     } finally {
       setIsApplying(false)
     }
@@ -146,8 +143,7 @@ function MatchDetailPage() {
       alert('매치 신청이 취소되었습니다.')
       fetchMatchDetail() // 취소 후 정보 갱신
     } catch (e) {
-      const errorMessage = e.response?.data?.message || e.message || '매치 신청 취소에 실패했습니다.'
-      alert(errorMessage)
+      alert(getErrorMessage(e, '매치 신청 취소에 실패했습니다.'))
     } finally {
       setIsCanceling(false)
     }
@@ -164,8 +160,7 @@ function MatchDetailPage() {
       alert('매치 게시글이 삭제되었습니다.')
       navigate('/matches', { replace: true })
     } catch (e) {
-      const errorMessage = e.response?.data?.message || e.message || '매치 게시글 삭제에 실패했습니다.'
-      alert(errorMessage)
+      alert(getErrorMessage(e, '매치 게시글 삭제에 실패했습니다.'))
     } finally {
       setIsDeleting(false)
     }
@@ -214,12 +209,13 @@ function MatchDetailPage() {
   }
 
   return (
-    <section className="py-10 sm:py-14">
+    <section className="py-4">
       <div className="max-w-2xl mx-auto">
-        <div className="flex items-center justify-between mb-4">
+        <div className="mb-4 grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2">
           <Button
             variant="ghost"
             onClick={() => navigate('/matches', { replace: true })}
+            className="justify-self-start"
           >
             ← 목록으로
           </Button>
@@ -228,17 +224,17 @@ function MatchDetailPage() {
               variant="ghost"
               onClick={handleDeleteMatch}
               disabled={isDeleting}
-              className="text-red-600 hover:text-red-700 hover:bg-red-50"
+              className="justify-self-end text-red-600 hover:text-red-700 hover:bg-red-50"
             >
               {isDeleting ? '삭제 중...' : '게시글 삭제'}
             </Button>
           )}
         </div>
 
-        <div className="rounded-2xl border border-gray-100 bg-white/80 shadow-card p-6">
+        <div className="rounded-[28px] border border-gray-100 bg-white/90 shadow-card p-5">
           <div className="grid gap-4">
             <div>
-              <h2 className="text-2xl font-semibold text-ink mb-2">{match.title}</h2>
+              <h2 className="mb-2 break-keep text-[28px] font-semibold leading-tight text-ink">{match.title}</h2>
               {match.teamName && (
                 <div className="flex items-center gap-3 mt-3">
                   {match.teamImg ? (
@@ -256,8 +252,8 @@ function MatchDetailPage() {
                       </span>
                     </div>
                   )}
-                  <div>
-                    <div className="text-ink font-medium">{match.teamName}</div>
+                  <div className="min-w-0 flex-1">
+                    <div className="line-clamp-2 break-keep text-ink font-medium">{match.teamName}</div>
                     {match.teamLevel && (
                       <div className="text-mute text-xs">레벨: {match.teamLevel}</div>
                     )}
@@ -271,22 +267,22 @@ function MatchDetailPage() {
               <div className="grid gap-2 text-sm mb-4">
                 <div className="flex">
                   <span className="text-mute w-20">날짜</span>
-                  <span className="text-ink">{formatDate(match.matchDate)}</span>
+                  <span className="min-w-0 break-keep text-ink">{formatDate(match.matchDate)}</span>
                 </div>
                 {match.matchTime && (
                   <div className="flex">
                     <span className="text-mute w-20">시간</span>
-                    <span className="text-ink">{match.matchTime}</span>
+                    <span className="min-w-0 break-keep text-ink">{match.matchTime}</span>
                   </div>
                 )}
                 <div className="flex">
                   <span className="text-mute w-20">장소</span>
-                  <span className="text-ink">{match.placeName || match.address}</span>
+                  <span className="min-w-0 break-keep text-ink">{match.placeName || match.address}</span>
                 </div>
                 {match.address && (
                   <div className="flex">
                     <span className="text-mute w-20">주소</span>
-                    <span className="text-ink">{match.address}</span>
+                    <span className="min-w-0 break-keep text-ink">{match.address}</span>
                   </div>
                 )}
               </div>
@@ -323,11 +319,11 @@ function MatchDetailPage() {
                     placeholder="신청 메시지를 입력하세요"
                   />
                 </label>
-                <div className="flex gap-2">
+                <div className="grid grid-cols-2 gap-2">
                   <Button
                     onClick={handleApply}
                     disabled={isApplying}
-                    className="flex-1"
+                    className="w-full"
                   >
                     {isApplying ? '신청 중...' : '매치 신청하기'}
                   </Button>
@@ -335,7 +331,7 @@ function MatchDetailPage() {
                     onClick={handleCancel}
                     disabled={isCanceling}
                     variant="ghost"
-                    className="flex-1"
+                    className="w-full"
                   >
                     {isCanceling ? '취소 중...' : '신청 취소'}
                   </Button>
@@ -359,8 +355,8 @@ function MatchDetailPage() {
                 ) : (
                   <div className="space-y-3">
                     {applicants.map((applicant) => (
-                      <div key={applicant.applicantId} className="p-3 border border-gray-100 rounded-lg">
-                        <div className="flex items-start gap-3 mb-2">
+                       <div key={applicant.applicantId} className="p-3 border border-gray-100 rounded-2xl">
+                         <div className="flex items-start gap-3 mb-2">
                           {applicant.teamImg ? (
                             <div className="w-10 h-10 rounded-full overflow-hidden bg-gray-100">
                               <img
@@ -376,14 +372,14 @@ function MatchDetailPage() {
                               </span>
                             </div>
                           )}
-                          <div className="flex-1">
-                            <div className="text-sm font-medium text-ink">{applicant.teamName}</div>
-                            {applicant.teamLevel && (
-                              <div className="text-xs text-mute">레벨: {applicant.teamLevel}</div>
-                            )}
-                            {applicant.message && (
-                              <div className="text-xs text-mute mt-1">{applicant.message}</div>
-                            )}
+                           <div className="min-w-0 flex-1">
+                             <div className="line-clamp-2 break-keep text-sm font-medium text-ink">{applicant.teamName}</div>
+                             {applicant.teamLevel && (
+                               <div className="text-xs text-mute">레벨: {applicant.teamLevel}</div>
+                             )}
+                             {applicant.message && (
+                               <div className="line-clamp-3 break-keep text-xs text-mute mt-1">{applicant.message}</div>
+                             )}
                             <div className="text-xs text-mute mt-1">
                               신청일: {new Date(applicant.appliedAt).toLocaleDateString()}
                             </div>
@@ -406,20 +402,20 @@ function MatchDetailPage() {
                           </div>
                         </div>
                         {applicant.status === 'PENDING' ? (
-                          <div className="flex gap-2 mt-2">
+                           <div className="grid grid-cols-2 gap-2 mt-2">
+                             <Button
+                               onClick={() => handleAcceptApplicant(applicant.applicantId)}
+                               className="w-full text-sm"
+                             >
+                               수락
+                             </Button>
                             <Button
-                              onClick={() => handleAcceptApplicant(applicant.applicantId)}
-                              className="flex-1 text-sm"
-                            >
-                              수락
-                            </Button>
-                            <Button
-                              onClick={() => handleRejectApplicant(applicant.applicantId)}
-                              variant="ghost"
-                              className="flex-1 text-sm text-red-600 hover:text-red-700 hover:bg-red-50"
-                            >
-                              거절
-                            </Button>
+                               onClick={() => handleRejectApplicant(applicant.applicantId)}
+                               variant="ghost"
+                               className="w-full text-sm text-red-600 hover:text-red-700 hover:bg-red-50"
+                             >
+                               거절
+                             </Button>
                           </div>
                         ) : (
                           <div className="mt-2">
@@ -454,4 +450,3 @@ function MatchDetailPage() {
 }
 
 export default MatchDetailPage
-
