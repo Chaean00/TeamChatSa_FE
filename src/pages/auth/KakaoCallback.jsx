@@ -1,8 +1,8 @@
 import { useEffect, useState, useRef } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
-import { api } from '../../shared/api/client'
 import { setAuthToken } from '../../shared/store/authStore'
 import { prefetchUser } from '../../shared/hook/useUser'
+import { getErrorMessage } from '../../shared/lib/errorMessage'
 
 function KakaoCallbackPage() {
   const { search } = useLocation()
@@ -18,13 +18,13 @@ function KakaoCallbackPage() {
     hasProcessed.current = true
 
     const query = new URLSearchParams(search)
-    const code = query.get('code')
     const token = query.get('token') || query.get('accessToken') || query.get('access_token')
     const state = query.get('state')
+    const isNewUser = query.get('isNewUser') === 'true'
     const errorParam = query.get('error')
 
     if (errorParam) {
-      setError(`카카오 로그인 오류: ${errorParam}`)
+      setError(errorParam)
       setTimeout(() => navigate('/login', { replace: true }), 2000)
       return
     }
@@ -36,58 +36,27 @@ function KakaoCallbackPage() {
       prefetchUser().catch(err => {
         console.warn('카카오 로그인 후 사용자 정보 조회 실패:', err)
       })
-      alert('카카오 로그인이 완료되었습니다.')
+
+      try {
+        if (typeof window !== 'undefined') {
+          window.sessionStorage.setItem('authNotice', isNewUser ? '카카오 인증이 완료되었습니다.' : '카카오 로그인이 완료되었습니다.')
+        }
+      } catch (storageError) {
+        console.warn('카카오 인증 안내 저장 실패:', storageError)
+      }
+
+      if (isNewUser) {
+        navigate('/auth/kakao/signup', { replace: true })
+        return
+      }
+
       const targetPath = state ? decodeURIComponent(state) : '/'
       navigate(targetPath, { replace: true })
       return
     }
 
-    // 코드가 없는 경우 (이미 처리되었거나 오류)
-    if (!code) {
-      setError('인가 코드가 없습니다.')
-      setTimeout(() => navigate('/login', { replace: true }), 2000)
-      return
-    }
-
-    // 코드가 있는 경우 - 백엔드에 토큰 교환 요청
-    ;(async () => {
-      try {
-        const res = await api.post('/auth/kakao/callback', { code, state })
-        const receivedToken = res?.data?.token || res?.data?.accessToken || res?.data?.access_token
-        if (!receivedToken) {
-          throw new Error('토큰이 응답에 없습니다.')
-        }
-        
-        setAuthToken(receivedToken)
-        
-        // 로그인 성공 후 즉시 사용자 정보를 미리 조회하여 캐싱
-        prefetchUser().catch(err => {
-          console.warn('카카오 로그인 후 사용자 정보 조회 실패:', err)
-        })
-        
-        // 성공 메시지 표시 (회원가입인지 로그인인지 확인)
-        const isNewUser = res?.data?.isNewUser ?? res?.data?.newUser ?? false
-        const message = isNewUser 
-          ? '카카오 회원가입이 완료되었습니다.' 
-          : '카카오 로그인이 완료되었습니다.'
-        alert(message)
-        
-        const targetPath = state ? decodeURIComponent(state) : '/'
-        navigate(targetPath, { replace: true })
-      } catch (e) {
-        let errorMessage = '로그인 처리에 실패했습니다.'
-        if (e.response) {
-          errorMessage = `서버 오류 (${e.response.status}): ${e.response.data?.message || e.response.statusText}`
-        } else if (e.request) {
-          errorMessage = '서버에 연결할 수 없습니다. 네트워크를 확인해주세요.'
-        } else {
-          errorMessage = e.message || '알 수 없는 오류가 발생했습니다.'
-        }
-        
-        setError(errorMessage)
-        setTimeout(() => navigate('/login', { replace: true }), 3000)
-      }
-    })()
+    setError(getErrorMessage(null, '카카오 인증 정보를 가져오지 못했습니다.'))
+    setTimeout(() => navigate('/login', { replace: true }), 3000)
   }, [search, navigate])
 
   return (
@@ -104,4 +73,3 @@ function KakaoCallbackPage() {
 }
 
 export default KakaoCallbackPage
-

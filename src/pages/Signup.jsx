@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../shared/hook/useAuth'
+import { getErrorMessage } from '../shared/lib/errorMessage'
 import Button from '../shared/ui/Button.jsx'
 
 function SignupPage() {
@@ -55,7 +56,7 @@ function SignupPage() {
       alert('회원가입이 완료되었습니다.')
       navigate('/login', { replace: true })
     } else {
-      alert(error)
+      alert(getErrorMessage({ message: error }, '회원가입에 실패했습니다.'))
     }
   }
 
@@ -153,4 +154,3 @@ function SignupPage() {
 }
 
 export default SignupPage
-

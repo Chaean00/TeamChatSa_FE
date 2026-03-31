@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { api } from '../api/client'
-import { getAuthToken } from '../store/authStore'
+import { getAuthToken, useAuthStore } from '../store/authStore'
+import { getErrorMessage } from '../lib/errorMessage'
 
 // 전역 상태로 사용자 정보 캐싱 및 요청 중복 방지
 let cachedUser = null
@@ -47,6 +48,11 @@ export async function prefetchUser() {
       cachedUser = userData
       return userData
     } catch (e) {
+      if (e?.response?.status === 401 || !getAuthToken()) {
+        useAuthStore.getState().clearAuth()
+        cachedUser = null
+        return null
+      }
       console.error('사용자 정보 조회 실패:', e)
       return null
     } finally {
@@ -81,7 +87,7 @@ export function useUser() {
         setUser(userData)
         setIsLoading(false)
       } catch (err) {
-        setError(err.message)
+        setError(getErrorMessage(err, '사용자 정보를 불러오지 못했습니다.'))
         setIsLoading(false)
       }
       return
@@ -105,7 +111,14 @@ export function useUser() {
         setError(null)
         return userData
       } catch (e) {
-        const errorMessage = e.response?.data?.message || e.message
+        if (e?.response?.status === 401 || !getAuthToken()) {
+          useAuthStore.getState().clearAuth()
+          setError(null)
+          setUser(null)
+          cachedUser = null
+          return null
+        }
+        const errorMessage = getErrorMessage(e, '사용자 정보를 불러오지 못했습니다.')
         setError(errorMessage)
         setUser(null)
         cachedUser = null
@@ -146,7 +159,14 @@ export function useUser() {
       setError(null)
       return userData
     } catch (e) {
-      const errorMessage = e.response?.data?.message || e.message
+      if (e?.response?.status === 401 || !getAuthToken()) {
+        useAuthStore.getState().clearAuth()
+        setError(null)
+        setUser(null)
+        cachedUser = null
+        return null
+      }
+      const errorMessage = getErrorMessage(e, '사용자 정보를 새로고침하지 못했습니다.')
       setError(errorMessage)
       setUser(null)
       cachedUser = null
@@ -180,4 +200,3 @@ export function useUser() {
 
   return { user, isLoading, error, refetch }
 }
-

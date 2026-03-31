@@ -1,6 +1,38 @@
 import axios from "axios";
 import { getAuthToken, setAuthToken } from "../store/authStore";
 
+async function handleSessionExpired(baseURL) {
+  const [{ useAuthStore }, { clearUserCache }] = await Promise.all([
+    import('../store/authStore'),
+    import('../hook/useUser'),
+  ])
+
+  useAuthStore.getState().clearAuth()
+  clearUserCache()
+
+  try {
+    if (typeof window !== 'undefined') {
+      window.sessionStorage.setItem('logoutReason', 'expired')
+    }
+  } catch (storageError) {
+    console.warn('세션 만료 사유 저장 실패:', storageError)
+  }
+
+  try {
+    await axios.post(
+      `${baseURL}/v1/auth/logout`,
+      {},
+      { withCredentials: true }
+    )
+  } catch (logoutError) {
+    console.warn('로그아웃 API 호출 실패:', logoutError)
+  }
+
+  if (typeof window !== 'undefined' && window.location.pathname !== '/login') {
+    window.location.replace('/login')
+  }
+}
+
 export const api = axios.create({
   // baseURL: import.meta.env.VITE_API_BASE_URL ? `${import.meta.env.VITE_API_BASE_URL}/api` : '/api',
   baseURL: "/api",
@@ -44,9 +76,16 @@ api.interceptors.response.use(
   (response) => response,
   async (error) => {
     const originalRequest = error.config
+    const currentToken = getAuthToken()
 
     // 401 에러이고, 재시도하지 않은 요청인 경우
-    if (error.response?.status === 401 && !originalRequest._retry) {
+    if (
+      error.response?.status === 401 &&
+      !originalRequest?._retry &&
+      currentToken &&
+      !String(originalRequest?.url || '').includes('/v1/auth/logout') &&
+      !String(originalRequest?.url || '').includes('/v1/auth/reissue')
+    ) {
       if (isRefreshing) {
         // 이미 토큰 갱신 중이면 대기
         return new Promise((resolve, reject) => {
@@ -88,31 +127,7 @@ api.interceptors.response.use(
         }
       } catch (refreshError) {
         processQueue(refreshError, null)
-        // 재발급 실패 시 로그아웃 처리
-        const { useAuthStore } = await import('../store/authStore')
-        useAuthStore.getState().clearAuth()
-
-        try {
-          if (typeof window !== 'undefined') {
-            window.sessionStorage.setItem('logoutReason', 'expired')
-          }
-        } catch (storageError) {
-          console.warn('세션 만료 사유 저장 실패:', storageError)
-        }
-
-        // refreshToken 쿠키 삭제를 위해 로그아웃 API 호출
-        try {
-          await axios.post(
-            `${baseURL}/v1/auth/logout`,
-            {},
-            { withCredentials: true }
-          )
-        } catch (logoutError) {
-          // 로그아웃 API 실패해도 무시 (이미 클라이언트 상태는 정리됨)
-          console.warn('로그아웃 API 호출 실패:', logoutError)
-        }
-        
-        window.location.href = '/login'
+        await handleSessionExpired(baseURL)
         return Promise.reject(refreshError)
       } finally {
         isRefreshing = false

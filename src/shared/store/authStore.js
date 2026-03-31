@@ -3,10 +3,15 @@ import { persist, createJSONStorage } from 'zustand/middleware'
 
 export const useAuthStore = create(
   persist(
-    (set, get) => ({
+    (set) => ({
       token: null,
       setToken: (token) => set({ token }),
-      clearAuth: () => set({ token: null}),
+      clearAuth: () => {
+        set({ token: null })
+        if (typeof window !== 'undefined') {
+          window.localStorage.removeItem('auth-store')
+        }
+      },
     }),
     {
       name: 'auth-store',
@@ -23,4 +28,3 @@ export function getAuthToken() {
 export function setAuthToken(token) {
   useAuthStore.getState().setToken(token)
 }
-

@@ -163,7 +163,7 @@ function NotificationBell() {
 
       {/* 알림 드롭다운 */}
       {showDropdown && (
-        <div className="absolute right-0 mt-2 w-96 bg-white shadow-lg rounded-xl border border-gray-200 overflow-hidden z-50">
+        <div className="fixed inset-x-4 top-20 z-[80] mx-auto w-auto max-w-[390px] overflow-hidden rounded-[28px] border border-gray-200 bg-white shadow-lg">
           {/* 헤더 */}
           <div className="p-4 border-b border-gray-100 bg-white flex items-center justify-between">
             <h3 className="font-semibold text-ink text-lg">알림</h3>
@@ -178,7 +178,7 @@ function NotificationBell() {
           </div>
 
           {/* 알림 목록 */}
-          <div className="max-h-96 overflow-y-auto">
+          <div className="max-h-[min(60vh,28rem)] overflow-y-auto">
             {isLoading ? (
               <div className="p-8 text-center">
                 <div className="w-6 h-6 border-2 border-gray-300 border-t-primary-500 rounded-full animate-spin mx-auto"></div>
@@ -246,4 +246,3 @@ function NotificationBell() {
 }
 
 export default NotificationBell
-

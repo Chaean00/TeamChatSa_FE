@@ -2,6 +2,7 @@ import { useState, useCallback } from 'react'
 import { useAuthStore, setAuthToken, getAuthToken } from '../store/authStore'
 import { clearUserCache, prefetchUser } from './useUser'
 import { api } from '../api/client'
+import { getErrorMessage } from '../lib/errorMessage'
 
 export function useAuth() {
   const { clearAuth } = useAuthStore()
@@ -30,8 +31,7 @@ export function useAuth() {
       
       return true
     } catch (e) {
-      const errorMessage = e.response?.data?.message || e.message || '로그인에 실패했습니다.'
-      setError(errorMessage)
+      setError(getErrorMessage(e, '로그인에 실패했습니다.'))
       return false
     } finally {
       setIsLoading(false)
@@ -39,27 +39,35 @@ export function useAuth() {
   }, [])
 
   const loginWithKakao = useCallback(() => {
-    // 백엔드의 Spring Security OAuth2 엔드포인트 사용
-    const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || '/api'
-    const state = encodeURIComponent(window.location.pathname)
-    
-    // 백엔드가 처리하는 카카오 OAuth 엔드포인트로 리다이렉트
-    const backendOAuthUrl = `${apiBaseUrl}/oauth2/authorization/kakao?state=${state}`
+    const configuredBaseUrl = import.meta.env.VITE_API_BASE_URL || ''
+    const backendOrigin = configuredBaseUrl.endsWith('/api')
+      ? configuredBaseUrl.slice(0, -4)
+      : configuredBaseUrl
+    const currentPath = window.location.pathname
+    const redirectPath = currentPath === '/login' || currentPath === '/signup' ? '/' : currentPath
+    const state = encodeURIComponent(redirectPath)
+    const backendOAuthUrl = `${backendOrigin}/oauth2/authorization/kakao?state=${state}`
     window.location.href = backendOAuthUrl
   }, [])
 
   const isAuthenticated = Boolean(getAuthToken())
-  const logout = useCallback(async () => {
+  const logout = useCallback(async ({ skipRequest = false } = {}) => {
     try {
-      // refreshToken 삭제를 위한 로그아웃 API 호출
-      await api.post('/v1/auth/logout')
+      if (!skipRequest) {
+        await api.post('/v1/auth/logout')
+      }
     } catch (e) {
-      // 로그아웃 API 실패해도 클라이언트에서는 로그아웃 처리
       console.error('로그아웃 API 호출 실패:', e)
     } finally {
       // accessToken 삭제 및 사용자 캐시 클리어
       clearAuth()
       clearUserCache()
+      try {
+        if (typeof window !== 'undefined') {
+          window.sessionStorage.removeItem('logoutReason')
+          window.sessionStorage.removeItem('authNotice')
+        }
+      } catch {}
     }
   }, [clearAuth])
 
@@ -72,12 +80,11 @@ export function useAuth() {
         payload.phone = phone
       }
 
-      const res = await api.post('/v1/auth/signup', payload)
+      await api.post('/v1/auth/signup', payload)
 
       return true
     } catch (e) {
-      const errorMessage = e.response?.data?.message || e.message || '회원가입에 실패했습니다.'
-      setError(errorMessage)
+      setError(getErrorMessage(e, '회원가입에 실패했습니다.'))
       return false
     } finally {
       setIsLoading(false)
@@ -88,4 +95,3 @@ export function useAuth() {
 }
 
 export default useAuth
-

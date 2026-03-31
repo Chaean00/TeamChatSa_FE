@@ -9,6 +9,7 @@ function LoginPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [logoutNotice, setLogoutNotice] = useState(null)
+  const [authNotice, setAuthNotice] = useState(null)
 
   useEffect(() => {
     try {
@@ -18,6 +19,12 @@ function LoginPage() {
 
       if (reason === 'expired') {
         setLogoutNotice('로그인 세션이 만료되었습니다. 다시 로그인해 주세요.')
+      }
+
+      const notice = window.sessionStorage.getItem('authNotice')
+      if (notice) {
+        setAuthNotice(notice)
+        window.sessionStorage.removeItem('authNotice')
       }
 
       window.sessionStorage.removeItem('logoutReason')
@@ -48,6 +55,12 @@ function LoginPage() {
           {logoutNotice && (
             <div className="mt-4 text-sm px-3 py-2 rounded-lg border bg-red-50 text-red-700 border-red-200">
               {logoutNotice}
+            </div>
+          )}
+
+          {authNotice && (
+            <div className="mt-4 text-sm px-3 py-2 rounded-lg border bg-primary-50 text-primary-700 border-primary-200">
+              {authNotice}
             </div>
           )}
 
@@ -98,4 +111,3 @@ function LoginPage() {
 }
 
 export default LoginPage
-

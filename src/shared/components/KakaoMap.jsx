@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 
-function KakaoMap({ onLocationSelect, initialLat, initialLng, initialAddress, initialPlaceName, readOnly = false }) {
+function KakaoMap({ onLocationSelect, initialLat, initialLng, readOnly = false }) {
   const mapRef = useRef(null)
   const mapInstanceRef = useRef(null)
   const markerRef = useRef(null)
@@ -103,7 +103,7 @@ function KakaoMap({ onLocationSelect, initialLat, initialLng, initialAddress, in
         map.setCenter(position)
         marker.setPosition(position)
       }
-    }, [isMapLoaded, initialLat, initialLng, onLocationSelect])
+    }, [isMapLoaded, initialLat, initialLng, onLocationSelect, readOnly])
 
   const handleSearch = () => {
     if (!searchKeyword.trim()) return
@@ -223,4 +223,3 @@ function KakaoMap({ onLocationSelect, initialLat, initialLng, initialAddress, in
 }
 
 export default KakaoMap
-
