@@ -66,41 +66,19 @@ function TeamCreatePage() {
     setError(null)
 
     try {
-      let imageUrl = null      // 이미지가 있으면 GCP Cloud Storage에 업로드
+      let imageUrl = null
       if (formData.image) {
-        // 1. 서명된 URL 받기
-        const presignRes = await api.post('/v1/gcp/storage/presign-upload', {
-          fileName: formData.image.name,
-          contentType: formData.image.type,
-        })
+        const uploadFormData = new FormData()
+        uploadFormData.append('file', formData.image)
 
-        const presignData = presignRes.data?.data
-        if (!presignData || !presignData.uploadUrl) {
-          throw new Error('서명된 URL을 받아오는데 실패했습니다.')
+        const uploadRes = await api.post('/v1/uploads/images', uploadFormData)
+        imageUrl = uploadRes.data?.data?.url
+
+        if (!imageUrl) {
+          throw new Error('업로드된 이미지 URL을 받아오지 못했습니다.')
         }
-
-        if (!presignData.publicUrl) {
-          throw new Error('공개 URL을 받아오는데 실패했습니다.')
-        }
-
-        // 2. 서명된 URL로 이미지 업로드 (PUT 요청)
-        const uploadRes = await fetch(presignData.uploadUrl, {
-          method: 'PUT',
-          body: formData.image,
-          headers: {
-            'Content-Type': formData.image.type,
-          },
-        })
-
-        if (!uploadRes.ok) {
-          throw new Error('이미지 업로드에 실패했습니다.')
-        }
-
-        // 3. 업로드된 이미지의 공개 URL 사용
-        imageUrl = presignData.publicUrl
       }
 
-      // 4. 팀 생성 API 호출 (이미지 URL만 전송)
       const payload = {
         name: formData.name,
         area: formData.area,
