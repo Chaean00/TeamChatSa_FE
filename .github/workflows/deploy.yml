@@ -5,8 +5,17 @@ on:
     branches:
       - main
 
+concurrency:
+  group: deploy-frontend-production
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
 env:
   DOCKER_IMAGE: ${{ secrets.DOCKERHUB_USERNAME }}/teamchatsa-web
+  IMAGE_TAG: ${{ github.sha }}
+  COMPOSE_PROJECT_NAME: teamchatsa-web
 
 jobs:
   deploy:
@@ -26,12 +35,13 @@ jobs:
           context: .
           file: Dockerfile
           push: true
-          tags: ${{ env.DOCKER_IMAGE }}:latest
+          tags: |
+            ${{ env.DOCKER_IMAGE }}:${{ env.IMAGE_TAG }}
+            ${{ env.DOCKER_IMAGE }}:latest
           build-args: |
             VITE_API_BASE_URL=${{ secrets.VITE_API_BASE_URL }}
             VITE_APP_NAME=${{ secrets.VITE_APP_NAME }}
             VITE_KAKAO_CLIENT_ID=${{ secrets.VITE_KAKAO_CLIENT_ID }}
-            VITE_KAKAO_REDIRECT_URI=${{ secrets.VITE_KAKAO_REDIRECT_URI }}
             VITE_KAKAO_MAP_API_KEY=${{ secrets.VITE_KAKAO_MAP_API_KEY }}
 
       - name: Copy docker-compose to server
@@ -52,7 +62,12 @@ jobs:
           key: ${{ secrets.SERVER_SSH_KEY }}
           port: ${{ secrets.SERVER_PORT }}
           script: |
+            set -eu
+            mkdir -p /opt/teamchatsa-web
             cd /opt/teamchatsa-web
-            docker compose -f docker-compose.prod.yml pull
-            docker compose -f docker-compose.prod.yml up -d --remove-orphans
+            export DOCKER_IMAGE='${{ env.DOCKER_IMAGE }}'
+            export IMAGE_TAG='${{ env.IMAGE_TAG }}'
+            export COMPOSE_PROJECT_NAME='${{ env.COMPOSE_PROJECT_NAME }}'
+            docker compose -p "$COMPOSE_PROJECT_NAME" -f docker-compose.prod.yml pull
+            docker compose -p "$COMPOSE_PROJECT_NAME" -f docker-compose.prod.yml up -d --remove-orphans
             docker image prune -f
