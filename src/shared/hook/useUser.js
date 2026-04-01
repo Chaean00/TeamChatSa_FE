@@ -67,11 +67,12 @@ export async function prefetchUser() {
 }
 
 export function useUser() {
+  const token = useAuthStore((state) => state.token)
   const [user, setUser] = useState(cachedUser)
   const [isLoading, setIsLoading] = useState(!cachedUser && isLoadingGlobal)
   const [error, setError] = useState(null)
 
-  const fetchUser = async () => {
+  const fetchUser = useCallback(async () => {
     const token = getAuthToken()
     if (!token) {
       setIsLoading(false)
@@ -133,7 +134,7 @@ export function useUser() {
 
     loadingPromise = promise
     return promise
-  }
+  }, [])
 
   // refetch 함수: 캐시 무시하고 강제로 새로고침
   const refetch = useCallback(async () => {
@@ -180,7 +181,6 @@ export function useUser() {
   }, [])
 
   useEffect(() => {
-    const token = getAuthToken()
     if (!token) {
       setIsLoading(false)
       setUser(null)
@@ -196,7 +196,7 @@ export function useUser() {
     }
 
     fetchUser()
-  }, [])
+  }, [fetchUser, token])
 
   return { user, isLoading, error, refetch }
 }

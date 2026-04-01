@@ -20,6 +20,8 @@ export function useAuth() {
       if (!token) {
         throw new Error('토큰이 응답에 없습니다.')
       }
+
+      clearUserCache()
       setAuthToken(token)
       
       // 로그인 성공 후 즉시 사용자 정보를 미리 조회하여 캐싱
@@ -67,7 +69,9 @@ export function useAuth() {
           window.sessionStorage.removeItem('logoutReason')
           window.sessionStorage.removeItem('authNotice')
         }
-      } catch {}
+      } catch (storageError) {
+        console.warn('로그아웃 관련 세션 스토리지 정리 실패:', storageError)
+      }
     }
   }, [clearAuth])
 

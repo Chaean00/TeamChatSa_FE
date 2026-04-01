@@ -53,7 +53,9 @@ function KakaoSignupCompletePage() {
       await prefetchUser()
       try {
         window.sessionStorage.setItem('authNotice', '카카오 가입이 완료되었습니다.')
-      } catch {}
+      } catch (storageError) {
+        console.warn('카카오 가입 완료 알림 저장 실패:', storageError)
+      }
       navigate('/', { replace: true })
     } catch (e) {
       setError(getErrorMessage(e, '추가 정보를 저장하지 못했습니다.'))
