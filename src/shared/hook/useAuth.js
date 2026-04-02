@@ -45,9 +45,7 @@ export function useAuth() {
     const backendOrigin = configuredBaseUrl.endsWith('/api')
       ? configuredBaseUrl.slice(0, -4)
       : configuredBaseUrl
-    const currentPath = window.location.pathname
-    const redirectPath = currentPath === '/login' || currentPath === '/signup' ? '/' : currentPath
-    const state = encodeURIComponent(redirectPath)
+    const state = encodeURIComponent('/')
     const backendOAuthUrl = `${backendOrigin}/oauth2/authorization/kakao?state=${state}`
     window.location.href = backendOAuthUrl
   }, [])

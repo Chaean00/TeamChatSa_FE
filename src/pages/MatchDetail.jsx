@@ -17,6 +17,7 @@ function MatchDetailPage() {
   const [isCanceling, setIsCanceling] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
   const [applyMessage, setApplyMessage] = useState('')
+  const [copiedContactKey, setCopiedContactKey] = useState('')
   const [myTeam, setMyTeam] = useState(null)
   const [applicants, setApplicants] = useState([])
   const [isLoadingApplicants, setIsLoadingApplicants] = useState(false)
@@ -166,6 +167,20 @@ function MatchDetailPage() {
     }
   }
 
+  const handleCopyContact = async (value, key) => {
+    if (!value) return
+
+    try {
+      await navigator.clipboard.writeText(value)
+      setCopiedContactKey(key)
+      window.setTimeout(() => {
+        setCopiedContactKey(prev => (prev === key ? '' : prev))
+      }, 2000)
+    } catch {
+      alert('연락처 복사에 실패했습니다.')
+    }
+  }
+
   const formatDate = (dateString) => {
     if (!dateString) return ''
     const date = new Date(dateString)
@@ -176,6 +191,31 @@ function MatchDetailPage() {
     const weekday = weekdays[date.getDay()]
     return `${year}년 ${month}월 ${day}일 (${weekday})`
   }
+
+  const getContactTypeLabel = (type) => {
+    switch (type) {
+      case 'KAKAO':
+        return '카카오톡 ID'
+      case 'PHONE':
+        return '전화번호'
+      case 'EMAIL':
+        return '이메일'
+      default:
+        return '연락처'
+    }
+  }
+
+  const renderContactActions = (contactType, contactValue, keyPrefix) => (
+    <div className="mt-3 flex flex-wrap gap-2">
+      <button
+        type="button"
+        onClick={() => handleCopyContact(contactValue, keyPrefix)}
+        className="inline-flex items-center rounded-lg border border-gray-200 px-3 py-2 text-sm font-medium text-ink transition-colors hover:bg-gray-50"
+      >
+        {copiedContactKey === keyPrefix ? '복사됨' : '복사'}
+      </button>
+    </div>
+  )
 
   if (isLoading) {
     return (
@@ -261,6 +301,44 @@ function MatchDetailPage() {
                 </div>
               )}
             </div>
+
+            {match.contactVisible && (
+              <div className="rounded-2xl border border-primary-100 bg-primary-50/70 p-4">
+                <div>
+                  <h3 className="text-base font-semibold text-ink">매치가 성사되었습니다</h3>
+                  <p className="mt-1 text-sm text-mute">이제 양 팀이 서로의 연락처를 확인하고 일정과 장소를 조율할 수 있습니다.</p>
+                </div>
+
+                <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                  {[
+                    {
+                      title: '우리 팀 연락처',
+                      teamName: match.myTeamName,
+                      contactType: match.myContactType,
+                      contactValue: match.myContact,
+                      key: 'my-contact',
+                    },
+                    {
+                      title: '상대 팀 연락처',
+                      teamName: match.opponentTeamName,
+                      contactType: match.opponentContactType,
+                      contactValue: match.opponentContact,
+                      key: 'opponent-contact',
+                    },
+                  ].map((contactCard) => (
+                    <div key={contactCard.key} className="rounded-2xl border border-white/70 bg-white/90 p-4">
+                      <p className="text-sm font-medium text-ink">{contactCard.title}</p>
+                      <p className="mt-1 text-xs text-mute">{contactCard.teamName}</p>
+                      <div className="mt-3 grid gap-1">
+                        <span className="text-xs text-mute">{getContactTypeLabel(contactCard.contactType)}</span>
+                        <span className="break-all text-sm font-semibold text-ink">{contactCard.contactValue}</span>
+                      </div>
+                      {renderContactActions(contactCard.contactType, contactCard.contactValue, contactCard.key)}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
 
             <div className="pt-4 border-t border-gray-100">
               <h3 className="text-sm font-medium text-ink mb-2">매치 정보</h3>

@@ -232,7 +232,6 @@ function TeamCreatePage() {
                 >
                   <option value="KAKAO">카카오톡 ID</option>
                   <option value="PHONE">전화번호</option>
-                  <option value="EMAIL">이메일</option>
                 </select>
               </label>
               <label className="grid gap-1">
@@ -243,9 +242,7 @@ function TeamCreatePage() {
                   placeholder={
                     formData.contactType === 'KAKAO' 
                       ? '카카오톡 ID를 입력해주세요'
-                      : formData.contactType === 'PHONE'
-                      ? '전화번호를 입력해주세요 (예: 010-1234-5678)'
-                      : '이메일을 입력해주세요'
+                      : '전화번호를 입력해주세요 (예: 010-1234-5678)'
                   }
                   value={formData.contact}
                   onChange={handleChange}

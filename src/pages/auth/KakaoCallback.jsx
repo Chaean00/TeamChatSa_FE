@@ -19,7 +19,6 @@ function KakaoCallbackPage() {
 
     const query = new URLSearchParams(search)
     const token = query.get('token') || query.get('accessToken') || query.get('access_token')
-    const state = query.get('state')
     const isNewUser = query.get('isNewUser') === 'true'
     const errorParam = query.get('error')
 
@@ -50,8 +49,7 @@ function KakaoCallbackPage() {
         return
       }
 
-      const targetPath = state ? decodeURIComponent(state) : '/'
-      navigate(targetPath, { replace: true })
+      navigate('/', { replace: true })
       return
     }
 
