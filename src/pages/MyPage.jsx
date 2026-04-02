@@ -48,6 +48,10 @@ function MyPage() {
   const [passwordError, setPasswordError] = useState(null)
   const [passwordFormData, setPasswordFormData] = useState({ currentPassword: '', newPassword: '', confirmPassword: '' })
   const [isSavingPassword, setIsSavingPassword] = useState(false)
+  const [feedbackContent, setFeedbackContent] = useState('')
+  const [feedbackError, setFeedbackError] = useState(null)
+  const [feedbackSuccess, setFeedbackSuccess] = useState(null)
+  const [isSubmittingFeedback, setIsSubmittingFeedback] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
 
   useEffect(() => {
@@ -210,6 +214,30 @@ function MyPage() {
     }
   }
 
+  const handleFeedbackSubmit = async (event) => {
+    event.preventDefault()
+    setFeedbackError(null)
+    setFeedbackSuccess(null)
+
+    if (!feedbackContent.trim()) {
+      setFeedbackError('의견 내용을 입력해주세요.')
+      return
+    }
+
+    setIsSubmittingFeedback(true)
+    try {
+      await api.post('/v1/feedback', {
+        content: feedbackContent.trim(),
+      })
+      setFeedbackContent('')
+      setFeedbackSuccess('의견을 전달했습니다. 감사합니다!')
+    } catch (submitError) {
+      setFeedbackError(getErrorMessage(submitError, '의견 전달에 실패했습니다.'))
+    } finally {
+      setIsSubmittingFeedback(false)
+    }
+  }
+
   if (isLoading) {
     return <section className="py-4 text-center text-sm text-mute">로딩 중...</section>
   }
@@ -363,6 +391,36 @@ function MyPage() {
           )}
         </div>
       )}
+
+      <div className="rounded-[28px] border border-gray-100 bg-white/90 p-5 shadow-card">
+        <div className="mb-4">
+          <h2 className="text-lg font-semibold text-ink">개발자에게 의견 보내기</h2>
+          <p className="text-sm text-mute">불편한 점이나 개선 아이디어를 간단히 남겨주세요.</p>
+        </div>
+
+        <form onSubmit={handleFeedbackSubmit} className="grid gap-3">
+          <textarea
+            value={feedbackContent}
+            onChange={(e) => setFeedbackContent(e.target.value)}
+            rows={4}
+            maxLength={1000}
+            placeholder="예: 알림 화면에서 이런 점이 불편했어요."
+            className="rounded-2xl border border-gray-200 px-3 py-3 focus:outline-none focus:ring-2 focus:ring-primary-200 resize-none"
+          />
+          <div className="flex items-center justify-between text-xs text-mute">
+            <span>{user?.nickname || user?.name} 님의 계정으로 전달됩니다.</span>
+            <span>{feedbackContent.length}/1000</span>
+          </div>
+          {(feedbackError || feedbackSuccess) && (
+            <p className={`text-sm ${feedbackError ? 'text-red-600' : 'text-primary-600'}`}>
+              {feedbackError || feedbackSuccess}
+            </p>
+          )}
+          <Button type="submit" disabled={isSubmittingFeedback}>
+            {isSubmittingFeedback ? '전달 중...' : '의견 보내기'}
+          </Button>
+        </form>
+      </div>
 
       <div className="flex gap-2 pb-2">
         <Button variant="ghost" className="flex-1" onClick={async () => { await logout(); navigate('/', { replace: true }) }}>로그아웃</Button>
