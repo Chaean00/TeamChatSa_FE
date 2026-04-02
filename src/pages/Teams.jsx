@@ -4,6 +4,10 @@ import { api } from '../shared/api/client'
 import { getErrorMessage } from '../shared/lib/errorMessage'
 import Button from '../shared/ui/Button.jsx'
 
+function getTeamInitial(name) {
+  return name ? name.trim().charAt(0).toUpperCase() : 'T'
+}
+
 function TeamsPage() {
   const navigate = useNavigate()
   const [teams, setTeams] = useState([])
@@ -108,20 +112,22 @@ function TeamsPage() {
       { threshold: 0.1 }
     )
 
-    if (observerTarget.current) {
-      observer.observe(observerTarget.current)
+    const target = observerTarget.current
+
+    if (target) {
+      observer.observe(target)
     }
 
     return () => {
-      if (observerTarget.current) {
-        observer.unobserve(observerTarget.current)
+      if (target) {
+        observer.unobserve(target)
       }
     }
   }, [loadMore, isLoadingMore, isLastPage])
 
   return (
     <section className="py-10 sm:py-14">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+      <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="grid gap-2">
           <h2 className="text-3xl font-semibold text-ink">팀 찾기</h2>
           <p className="text-mute">원하는 팀을 찾아 가입을 신청해보세요.</p>
@@ -131,33 +137,32 @@ function TeamsPage() {
         </Link>
       </div>
 
-      {/* 검색 섹션 */}
-      <div className="rounded-[28px] border border-gray-100 bg-white/90 shadow-card p-5 mb-6">
+      <div className="mb-6 rounded-[28px] border border-gray-100 bg-white/90 p-5 shadow-card">
         <div className="grid gap-4">
           <div className="flex items-center justify-between">
             <h3 className="text-lg font-semibold text-ink">팀 검색</h3>
             {appliedTeamName && (
               <button
                 onClick={resetSearch}
-                className="text-sm text-mute hover:text-ink transition-colors"
+                className="text-sm text-mute transition-colors hover:text-ink"
               >
                 초기화
               </button>
             )}
           </div>
-          
+
           <div className="grid grid-cols-[minmax(0,1fr)_auto] gap-2">
             <input
               type="text"
               placeholder="팀 이름을 입력하세요"
               value={tempTeamName}
               onChange={(e) => handleTeamNameChange(e.target.value)}
-              onKeyPress={(e) => {
+              onKeyDown={(e) => {
                 if (e.key === 'Enter') {
                   applySearch()
                 }
               }}
-              className="min-w-0 w-full border border-gray-200 rounded-xl px-3 py-3 focus:outline-none focus:ring-2 focus:ring-primary-200 text-sm"
+              className="min-w-0 w-full rounded-xl border border-gray-200 px-3 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary-200"
             />
             <Button onClick={applySearch} className="px-4">
               검색
@@ -167,53 +172,86 @@ function TeamsPage() {
       </div>
 
       {isLoading ? (
-        <div className="text-center py-10">
+        <div className="py-10 text-center">
           <p className="text-mute">로딩 중...</p>
         </div>
       ) : error ? (
-        <div className="text-center py-10">
+        <div className="py-10 text-center">
           <p className="text-red-600">{error}</p>
         </div>
       ) : teams.length === 0 ? (
-        <div className="text-center py-10">
+        <div className="py-10 text-center">
           <p className="text-mute">
             {appliedTeamName ? `"${appliedTeamName}"에 대한 검색 결과가 없습니다.` : '등록된 팀이 없습니다.'}
           </p>
         </div>
       ) : (
         <>
-          <div className="mt-6 grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid gap-4">
             {teams.map((team) => (
               <div
                 key={team.id}
                 onClick={() => navigate(`/teams/${team.id}`)}
-                className="rounded-[24px] border border-gray-100 p-4 bg-white/70 shadow-card cursor-pointer hover:shadow-lg transition-shadow"
+                className="w-full cursor-pointer rounded-[28px] border border-gray-100 bg-white/88 p-4 shadow-card transition-all hover:-translate-y-0.5 hover:border-primary-100 hover:shadow-lg sm:p-5"
               >
-                <div className="w-full h-40 mb-3 rounded-lg overflow-hidden bg-gray-100 flex items-center justify-center">
-                  {team.img ? (
-                    <img
-                      src={team.img}
-                      alt={team.name}
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    <div className="w-full h-full bg-primary-100 flex items-center justify-center">
-                      <span className="text-primary-600 font-semibold text-2xl">
-                        {team.name ? team.name.charAt(0).toUpperCase() : 'T'}
-                      </span>
+                <div className="flex items-start gap-4">
+                  <div className="h-24 w-24 shrink-0 overflow-hidden rounded-[22px] bg-slate-100 ring-1 ring-black/5 sm:h-28 sm:w-28">
+                    {team.img ? (
+                      <img
+                        src={team.img}
+                        alt={team.name}
+                        className="h-full w-full object-cover"
+                      />
+                    ) : (
+                      <div className="flex h-full w-full items-center justify-center bg-[linear-gradient(135deg,#cffafe_0%,#ecfeff_100%)]">
+                        <span className="text-3xl font-semibold text-primary-700">
+                          {getTeamInitial(team.name)}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <div className="line-clamp-2 break-keep text-xl font-semibold leading-tight text-ink">
+                          {team.name}
+                        </div>
+                        <div className="mt-2 flex flex-wrap items-center gap-2 text-xs font-medium">
+                          <span className="rounded-full bg-slate-100 px-3 py-1 text-slate-600">
+                            {team.area || '지역 미정'}
+                          </span>
+                          <span className="rounded-full bg-primary-50 px-3 py-1 text-primary-700">
+                            멤버 {team.memberCount ?? 0}명
+                          </span>
+                          {team.levelLabel && (
+                            <span className="rounded-full bg-emerald-50 px-3 py-1 text-emerald-700">
+                              {team.levelLabel}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="hidden shrink-0 rounded-full border border-slate-200 px-3 py-1 text-xs font-medium text-mute sm:block">
+                        상세보기
+                      </div>
                     </div>
-                  )}
+
+                    <p className="mt-3 line-clamp-2 break-keep text-sm leading-6 text-mute">
+                      {team.description || '아직 등록된 팀 소개가 없습니다. 팀 상세에서 더 많은 정보를 확인해보세요.'}
+                    </p>
+
+                    <div className="mt-4 flex items-center justify-between border-t border-slate-100 pt-3 text-sm">
+                      <span className="text-mute">탭해서 팀 정보 보기</span>
+                      <span className="font-medium text-primary-600">자세히 보기 →</span>
+                    </div>
+                  </div>
                 </div>
-                <div className="line-clamp-2 break-keep text-ink font-medium text-lg mb-1">{team.name}</div>
-                <div className="line-clamp-2 break-keep text-mute text-sm mb-2">{team.area}</div>
-                {team.description && (
-                  <div className="text-mute text-sm mb-2 line-clamp-2">{team.description}</div>
-                )}
-                <div className="text-mute text-xs">멤버 {team.memberCount}명</div>
               </div>
             ))}
           </div>
-          <div ref={observerTarget} className="h-10 flex items-center justify-center">
+
+          <div ref={observerTarget} className="flex h-12 items-center justify-center">
             {isLoadingMore && (
               <p className="text-mute text-sm">더 불러오는 중...</p>
             )}
